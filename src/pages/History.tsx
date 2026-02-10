@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Calendar, ChevronLeft as PrevIcon, ChevronRight as NextIcon } from 'lucide-react';
+import { ChevronLeft, Calendar, ChevronLeft as PrevIcon, ChevronRight as NextIcon, BarChart3, Toilet, User, Inbox, RotateCcw } from 'lucide-react';
+
+// 这些导入实际上都在使用，但可能在文件的后面部分
 import { format, addDays, startOfWeek, isSameDay } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import { Card } from '../components/Card';
@@ -14,6 +16,7 @@ export function History() {
 
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [weekRecords, setWeekRecords] = useState<PooRecord[]>([]);
+  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const weekStart = startOfWeek(currentWeek, { weekStartsOn: 1 }); // 周一开始
@@ -65,13 +68,28 @@ export function History() {
 
   const prevWeek = () => {
     setCurrentWeek((prev) => addDays(prev, -7));
+    setSelectedDay(null);
   };
 
   const nextWeek = () => {
     setCurrentWeek((prev) => addDays(prev, 7));
+    setSelectedDay(null);
+  };
+
+  const handleDayClick = (day: Date) => {
+    setSelectedDay(day);
+  };
+
+  const handleShowAll = () => {
+    setSelectedDay(null);
   };
 
   const isCurrentWeek = isSameDay(weekStart, startOfWeek(new Date(), { weekStartsOn: 1 }));
+
+  // 获取要显示的记录
+  const displayRecords = selectedDay
+    ? getRecordsForDay(selectedDay)
+    : weekRecords;
 
   return (
     <div className="min-h-screen bg-cream p-4">
@@ -83,7 +101,7 @@ export function History() {
         >
           <ChevronLeft size={24} className="text-primary" />
         </button>
-        <h1 className="font-serif text-2xl text-primary">历史记录 📊</h1>
+        <h1 className="font-serif text-2xl text-primary flex items-center gap-2">历史记录 <BarChart3 size={24} className="text-primary" /></h1>
       </header>
 
       {/* 周选择器 */}
@@ -122,21 +140,25 @@ export function History() {
             const dayRecords = getRecordsForDay(day);
             const isToday = isSameDay(day, new Date());
             const hasRecords = dayRecords.length > 0;
+            const isSelected = selectedDay && isSameDay(day, selectedDay);
 
             return (
               <button
                 key={day.toISOString()}
+                onClick={() => handleDayClick(day)}
                 className={`aspect-square rounded-xl flex flex-col items-center justify-center gap-1 transition-all ${
-                  isToday
+                  isSelected
+                    ? 'bg-pink text-white ring-2 ring-pink ring-offset-2'
+                    : isToday
                     ? 'bg-primary text-white'
                     : hasRecords
-                    ? 'bg-cream-warm'
-                    : 'bg-cream-warm/50'
+                    ? 'bg-cream-warm hover:bg-cream'
+                    : 'bg-cream-warm/50 hover:bg-cream-warm'
                 }`}
               >
                 <span
                   className={`text-sm font-mono ${
-                    isToday ? 'text-white' : 'text-primary'
+                    isSelected || isToday ? 'text-white' : 'text-primary'
                   }`}
                 >
                   {format(day, 'd')}
@@ -147,7 +169,7 @@ export function History() {
                       const mood = getMoodInfo(record.moodId);
                       return (
                         <span key={idx} className="text-xs">
-                          {mood?.emoji || '💩'}
+                          {mood?.emoji || '•'}
                         </span>
                       );
                     })}
@@ -161,35 +183,60 @@ export function History() {
 
       {/* 详细记录 */}
       <div>
-        <h2 className="font-serif text-lg text-primary mb-4 flex items-center gap-2">
-          <Calendar size={18} />
-          {isCurrentWeek ? '本周记录' : '该周记录'}
-        </h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-serif text-lg text-primary flex items-center gap-2">
+            <Calendar size={18} />
+            {selectedDay 
+              ? format(selectedDay, 'M月d日', { locale: zhCN }) + '的记录'
+              : (isCurrentWeek ? '本周记录' : '该周记录')
+            }
+          </h2>
+          {selectedDay && (
+            <button
+              onClick={handleShowAll}
+              className="flex items-center gap-1 text-sm text-primary/60 hover:text-primary font-mono"
+            >
+              <RotateCcw size={14} />
+              显示全部
+            </button>
+          )}
+        </div>
 
         {isLoading ? (
           <div className="text-center py-12">
-            <div className="text-3xl mb-4 animate-bounce">💩</div>
+            <div className="flex justify-center mb-4">
+              <Toilet size={40} className="text-primary animate-bounce" />
+            </div>
             <p className="font-mono text-primary/60">加载中...</p>
           </div>
-        ) : weekRecords.length === 0 ? (
+        ) : displayRecords.length === 0 ? (
           <Card className="py-12 text-center">
-            <div className="text-5xl mb-4">📭</div>
-            <p className="font-serif text-primary mb-2">这周还没有记录</p>
+            <div className="flex justify-center mb-4">
+              <Inbox size={48} className="text-primary/30" />
+            </div>
+            <p className="font-serif text-primary mb-2">
+              {selectedDay ? '这天还没有记录' : '这周还没有记录'}
+            </p>
             <p className="text-sm text-primary/50 font-mono">
-              记得每天记录哦 💕
+              {selectedDay ? '点击"显示全部"查看整周' : '记得每天记录哦'}
             </p>
           </Card>
         ) : (
           <div className="space-y-4">
-            {weekDays.map((day) => {
-              const dayRecords = getRecordsForDay(day);
+            {(selectedDay ? [selectedDay] : weekDays).map((day) => {
+              const dayRecords = selectedDay 
+                ? displayRecords 
+                : getRecordsForDay(day);
+              
               if (dayRecords.length === 0) return null;
 
               return (
                 <div key={day.toISOString()}>
-                  <p className="text-xs text-primary/40 font-mono mb-2 px-1">
-                    {format(day, 'M月d日 EEEE', { locale: zhCN })}
-                  </p>
+                  {!selectedDay && (
+                    <p className="text-xs text-primary/40 font-mono mb-2 px-1">
+                      {format(day, 'M月d日 EEEE', { locale: zhCN })}
+                    </p>
+                  )}
                   {dayRecords.map((record) => {
                     const shape = getShapeInfo(record.shapeId);
                     const mood = getMoodInfo(record.moodId);
@@ -203,7 +250,11 @@ export function History() {
                         className="mb-3"
                       >
                         <div className="flex items-center gap-3">
-                          <span className="text-2xl">{user?.avatar || (isPartner ? '👤' : '😊')}</span>
+                          {user?.avatar ? (
+                           <span className="text-2xl">{user.avatar}</span>
+                         ) : (
+                           <User size={24} className="text-primary/60" />
+                         )}
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
                               {shape && (

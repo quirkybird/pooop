@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Copy, Check, Heart } from 'lucide-react';
+import { ChevronLeft, Copy, Check, Heart, Users, Send, Download } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { supabaseApi as api } from '../services/supabaseApi';
@@ -60,7 +60,7 @@ export function Bind() {
         >
           <ChevronLeft size={24} className="text-primary" />
         </button>
-        <h1 className="font-serif text-2xl text-primary">绑定伴侣 💕</h1>
+        <h1 className="font-serif text-2xl text-primary flex items-center gap-2">绑定伴侣 <Heart size={20} className="text-pink" /></h1>
       </header>
 
       {/* 成功状态 */}
@@ -73,7 +73,7 @@ export function Bind() {
             绑定成功！
           </h2>
           <p className="text-sm text-primary/60 font-mono">
-            你们现在可以互相查看记录了 💑
+            你们现在可以互相查看记录了
           </p>
         </Card>
       ) : (
@@ -81,14 +81,16 @@ export function Bind() {
           {/* 说明卡片 */}
           <Card className="mb-6 bg-gradient-to-br from-pink-soft/30 to-white border-pink/20">
             <div className="text-center py-4">
-              <div className="text-4xl mb-3">💑</div>
+              <div className="flex justify-center mb-3">
+                <Users size={48} className="text-pink" />
+              </div>
               <h2 className="font-serif text-xl text-primary mb-2">
                 与伴侣一起记录
               </h2>
               <p className="text-sm text-primary/60 font-mono leading-relaxed">
                 绑定后，你们可以互相查看对方的记录
                 <br />
-                并通过爱心表达关心 💕
+                并通过爱心表达关心
               </p>
             </div>
           </Card>
@@ -96,7 +98,7 @@ export function Bind() {
           {/* 我的邀请码 */}
           <Card className="mb-6">
             <h3 className="font-serif text-lg text-primary mb-4 flex items-center gap-2">
-              <span className="text-xl">📤</span>
+<Send size={20} />
               我的邀请码
             </h3>
             <p className="text-sm text-primary/60 font-mono mb-4">
@@ -115,7 +117,7 @@ export function Bind() {
             </div>
             {copied && (
               <p className="text-xs text-primary-light font-mono mt-2 text-center">
-                已复制到剪贴板 ✓
+                已复制到剪贴板
               </p>
             )}
           </Card>
@@ -130,7 +132,7 @@ export function Bind() {
           {/* 输入邀请码 */}
           <Card className="mb-8">
             <h3 className="font-serif text-lg text-primary mb-4 flex items-center gap-2">
-              <span className="text-xl">📥</span>
+<Download size={20} />
               输入伴侣的邀请码
             </h3>
             <p className="text-sm text-primary/60 font-mono mb-4">
@@ -159,7 +161,7 @@ export function Bind() {
           {/* 提示 */}
           <div className="text-center">
             <p className="text-xs text-primary/40 font-mono">
-              💡 提示：每个用户只能绑定一个伴侣
+              提示：每个用户只能绑定一个伴侣
               <br />
               绑定后如需更换，请联系客服
             </p>

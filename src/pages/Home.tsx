@@ -7,6 +7,11 @@ import {
   UserPlus,
   Clock,
   Calendar,
+  Toilet,
+  Heart,
+  User,
+  MessageCircle,
+  FileText,
 } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
@@ -107,8 +112,12 @@ export function Home() {
       >
         <div className="flex items-start gap-4">
           {/* 用户头像 */}
-          <div className="w-12 h-12 rounded-full bg-cream-warm flex items-center justify-center text-2xl">
-            {user?.avatar || (isPartner ? '👤' : '😊')}
+          <div className="w-12 h-12 rounded-full bg-cream-warm flex items-center justify-center">
+            {user?.avatar ? (
+              <span className="text-2xl">{user.avatar}</span>
+            ) : (
+              <User size={24} className="text-primary/60" />
+            )}
           </div>
 
           <div className="flex-1">
@@ -146,8 +155,9 @@ export function Home() {
 
             {/* 备注 */}
             {record.note && (
-              <p className="text-sm text-primary/70 font-mono mt-2 bg-cream-warm/50 p-2 rounded-xl">
-                💭 {record.note}
+              <p className="text-sm text-primary/70 font-mono mt-2 bg-cream-warm/50 p-2 rounded-xl flex items-center gap-2">
+                <MessageCircle size={16} className="text-primary/50" />
+                {record.note}
               </p>
             )}
 
@@ -172,7 +182,9 @@ export function Home() {
     return (
       <div className="min-h-screen bg-cream flex items-center justify-center">
         <div className="text-center">
-          <div className="text-4xl mb-4 animate-bounce">💩</div>
+          <div className="flex justify-center mb-4">
+            <Toilet size={48} className="text-primary animate-bounce" />
+          </div>
           <p className="font-mono text-primary/60">加载中...</p>
         </div>
       </div>
@@ -188,13 +200,17 @@ export function Home() {
             <p className="font-mono text-xs text-primary/50 mb-1">
               {format(new Date(), 'yyyy年M月d日 EEEE', { locale: zhCN })}
             </p>
-            <h1 className="font-serif text-2xl text-primary">今日便便 💕</h1>
+            <h1 className="font-serif text-2xl text-primary flex items-center gap-2">今日便便 <Heart size={20} className="text-pink" /></h1>
           </div>
           <div className="flex items-center gap-2">
             {/* 当前用户信息 */}
             {currentUser && (
               <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-full shadow-sm border border-primary/10">
-                <span className="text-xl">{currentUser.avatar || '👤'}</span>
+                {currentUser.avatar ? (
+                 <span className="text-xl">{currentUser.avatar}</span>
+               ) : (
+                 <User size={20} className="text-primary/60" />
+               )}
                 <span className="font-mono text-sm text-primary font-medium">
                   {currentUser.name}
                 </span>
@@ -232,13 +248,17 @@ export function Home() {
         {partner && (
           <div className="mb-6 p-4 bg-gradient-to-r from-pink-soft to-cream rounded-2xl border border-pink/20">
             <div className="flex items-center gap-3">
-              <span className="text-3xl">{partner.avatar || '👤'}</span>
+              {partner.avatar ? (
+               <span className="text-3xl">{partner.avatar}</span>
+             ) : (
+               <User size={32} className="text-primary/60" />
+             )}
               <div>
                 <p className="font-serif text-primary">
                   与 <span className="text-pink">{partner.name}</span> 甜蜜绑定中
                 </p>
                 <p className="text-xs text-primary/50 font-mono">
-                  相互关心，记录每一天 💕
+                  相互关心，记录每一天
                 </p>
               </div>
             </div>
@@ -259,7 +279,9 @@ export function Home() {
 
           {todayRecords.length === 0 && partnerTodayRecords.length === 0 ? (
             <Card className="py-12 text-center">
-              <div className="text-5xl mb-4">📝</div>
+              <div className="flex justify-center mb-4">
+                <FileText size={48} className="text-primary/30" />
+              </div>
               <p className="font-serif text-primary mb-2">还没有记录今天</p>
               <p className="text-sm text-primary/50 font-mono">
                 点击下方按钮开始记录吧

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Check, FileText } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Check, FileText, Moon } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { ShapeSelector } from '../components/ShapeSelector';
@@ -90,7 +90,7 @@ export function Record() {
         >
           <ChevronLeft size={24} className="text-primary" />
         </button>
-        <h1 className="font-serif text-2xl text-primary">记录便便 💩</h1>
+        <h1 className="font-serif text-2xl text-primary flex items-center gap-2">记录便便 <Moon size={24} /></h1>
       </header>
 
       {/* 步骤指示器 */}

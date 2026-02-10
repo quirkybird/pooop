@@ -49,10 +49,12 @@ export function Register() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="text-6xl mb-4">💩</div>
+          <div className="flex justify-center mb-4">
+            <Moon size={64} className="text-primary" />
+          </div>
           <h1 className="font-serif text-3xl text-primary mb-2">Pooop</h1>
-          <p className="text-sm text-primary/60 font-mono">
-            创建账号，开始记录 💕
+          <p className="text-sm text-primary/60 font-mono flex items-center justify-center gap-1">
+            创建账号，开始记录 <Heart size={16} className="text-pink" />
           </p>
         </div>
 

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
-import { Calendar, Clock } from 'lucide-react';
+import { Calendar, Clock, Check } from 'lucide-react';
 
 interface TimelinePickerProps {
   value: Date;
@@ -87,7 +87,7 @@ export function TimelinePicker({ value, onChange }: TimelinePickerProps) {
                   : 'bg-cream-warm border-transparent text-primary hover:bg-cream-light hover:border-primary/20'
               }`}
             >
-              {isSelected && <span className="mr-1">✓</span>}
+              {isSelected && <Check size={12} className="inline mr-1" />}
               {preset.label}
             </button>
           );

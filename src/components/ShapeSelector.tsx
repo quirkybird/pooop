@@ -1,6 +1,6 @@
 import { SHAPE_OPTIONS } from '../services/api';
 import type { ShapeOption } from '../types';
-import { Info } from 'lucide-react';
+import { Info, Lightbulb, Check } from 'lucide-react';
 
 interface ShapeSelectorProps {
   selectedId?: string;
@@ -63,13 +63,14 @@ export function ShapeSelector({ selectedId, onSelect }: ShapeSelectorProps) {
                   {shape.description}
                 </p>
                 {shape.healthMeaning && (
-                  <p className="text-xs text-primary/50 font-mono">
-                    💡 {shape.healthMeaning}
+                  <p className="text-xs text-primary/50 font-mono flex items-center gap-1">
+                    <Lightbulb size={12} />
+                    {shape.healthMeaning}
                   </p>
                 )}
               </div>
               {selectedId === shape.id && (
-                <span className="text-primary text-xl flex-shrink-0">✓</span>
+                <Check size={24} className="text-primary flex-shrink-0" />
               )}
             </button>
           );
