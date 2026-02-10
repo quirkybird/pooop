@@ -5,10 +5,12 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { supabaseApi as api } from '../services/supabaseApi';
 import useExtendedStore from '../stores/useStore';
+import { useToast } from '../hooks/useToast';
 
 export function Bind() {
   const navigate = useNavigate();
   const { currentUser, setPartner } = useExtendedStore();
+  const { success, error: showError } = useToast();
 
   const [inviteCode, setInviteCode] = useState('');
   const [copied, setCopied] = useState(false);
@@ -19,6 +21,7 @@ export function Bind() {
     if (currentUser?.inviteCode) {
       navigator.clipboard.writeText(currentUser.inviteCode);
       setCopied(true);
+      success("邀请码已复制");
       setTimeout(() => setCopied(false), 2000);
     }
   };
@@ -36,15 +39,16 @@ export function Bind() {
       if (response.success) {
         setPartner(response.data);
         setBindSuccess(true);
+        success("绑定成功！祝你们幸福~");
         setTimeout(() => {
           navigate('/');
         }, 1500);
       } else {
-        alert(response.message || '绑定失败，请检查邀请码');
+        showError(response.message || '绑定失败，请检查邀请码');
       }
     } catch (error) {
       console.error('Bind failed:', error);
-      alert('绑定失败，请重试');
+      showError('绑定失败，请重试');
     } finally {
       setIsBinding(false);
     }

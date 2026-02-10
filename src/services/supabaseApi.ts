@@ -159,6 +159,22 @@ export const supabaseApi = {
         return handleError(error);
       }
     },
+
+    updateAvatar: async (userId: string, avatarSeed: string): Promise<ApiResponse<User>> => {
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .update({ avatar_emoji: avatarSeed })
+          .eq('id', userId)
+          .select()
+          .single();
+
+        if (error) throw error;
+        return createResponse(transformUser(data));
+      } catch (error) {
+        return handleError(error);
+      }
+    },
   },
 
   // 记录相关

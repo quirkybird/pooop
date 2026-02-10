@@ -18,6 +18,7 @@ import { Card } from '../components/Card';
 import { HeartButton } from '../components/HeartButton';
 import { ReminderCardComponent } from '../components/ReminderCard';
 import { DicebearAvatar } from '../components/AvatarSelector';
+import { AvatarEditModal } from '../components/AvatarEditModal';
 import { supabaseApi as api, SHAPE_OPTIONS, MOOD_OPTIONS } from '../services/supabaseApi';
 import useExtendedStore from '../stores/useStore';
 import type { PooRecord } from '../types';
@@ -39,6 +40,7 @@ export function Home() {
   } = useExtendedStore();
 
   const [isLoading, setIsLoading] = useState(true);
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -95,6 +97,18 @@ export function Home() {
 
   const handleDismissReminder = (id: string) => {
     removeReminderCard(id);
+  };
+
+  const handleAvatarClick = () => {
+    if (currentUser) {
+      setShowAvatarModal(true);
+    }
+  };
+
+  const handleAvatarUpdated = (newAvatar: string) => {
+    if (currentUser) {
+      setCurrentUser({ ...currentUser, avatar: newAvatar });
+    }
   };
 
   const renderRecordCard = (
@@ -206,18 +220,21 @@ export function Home() {
           <div className="flex items-center gap-2">
             {/* 当前用户信息 */}
             {currentUser && (
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-full shadow-sm border border-primary/10">
+              <button
+                onClick={handleAvatarClick}
+                className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-full shadow-sm border border-primary/10 hover:shadow-md transition-shadow cursor-pointer"
+              >
                 {currentUser.avatar ? (
-                 <div className="w-8 h-8 rounded-full overflow-hidden">
-                   <DicebearAvatar seed={currentUser.avatar} size={32} />
-                 </div>
-               ) : (
-                 <User size={20} className="text-primary/60" />
-               )}
+                  <div className="w-8 h-8 rounded-full overflow-hidden">
+                    <DicebearAvatar seed={currentUser.avatar} size={32} />
+                  </div>
+                ) : (
+                  <User size={20} className="text-primary/60" />
+                )}
                 <span className="font-mono text-sm text-primary font-medium">
                   {currentUser.name}
                 </span>
-              </div>
+              </button>
             )}
             {/* 绑定伴侣按钮 */}
             {!partner && (
@@ -324,6 +341,15 @@ export function Home() {
           <span>记录一下</span>
         </Button>
       </div>
+
+      {/* 头像编辑弹窗 */}
+      <AvatarEditModal
+        isOpen={showAvatarModal}
+        onClose={() => setShowAvatarModal(false)}
+        currentAvatar={currentUser?.avatar || 'Felix'}
+        userId={currentUser?.id || ''}
+        onAvatarUpdated={handleAvatarUpdated}
+      />
     </div>
   );
 }

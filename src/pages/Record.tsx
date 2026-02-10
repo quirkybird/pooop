@@ -9,6 +9,7 @@ import { TimelinePicker } from '../components/TimelinePicker';
 import { supabaseApi as api } from '../services/supabaseApi';
 import useExtendedStore from '../stores/useStore';
 import type { ShapeOption, MoodOption } from '../types';
+import { useToast } from '../hooks/useToast';
 
 const STEPS = [
   { id: 1, title: '时间', description: '什么时候？' },
@@ -19,6 +20,7 @@ const STEPS = [
 export function Record() {
   const navigate = useNavigate();
   const { currentUser, addRecord } = useExtendedStore();
+  const { success, error: showError } = useToast();
 
   const [currentStep, setCurrentStep] = useState(1);
   const [timestamp, setTimestamp] = useState(new Date());
@@ -57,11 +59,12 @@ export function Record() {
 
       if (response.success) {
         addRecord(response.data);
+        success("记录成功！");
         navigate('/');
       }
     } catch (error) {
       console.error('Failed to create record:', error);
-      alert('记录失败，请重试');
+      showError('记录失败，请重试');
     } finally {
       setIsSubmitting(false);
     }

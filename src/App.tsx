@@ -7,11 +7,13 @@ import { History } from './pages/History';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { EmailVerified } from './pages/EmailVerified';
+import { Toaster } from './components/ui/Toaster';
 import './index.css';
 
 function App() {
   return (
     <Router>
+      <Toaster />
       <Routes>
         {/* 公开路由 */}
         <Route path="/login" element={<Login />} />

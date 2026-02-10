@@ -4,11 +4,13 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { useAuth } from '../hooks/useAuth';
 import { Mail, Lock, Moon, Heart, AlertCircle } from 'lucide-react';
+import { useToast } from '../hooks/useToast';
 
 export function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const { signIn, loading, error, resetSessionExpired } = useAuth();
+  const { success, error: showError } = useToast();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -37,10 +39,12 @@ export function Login() {
 
     try {
       await signIn(email.trim(), password);
+      success("登录成功，欢迎回来！");
       navigate('/', { replace: true });
     } catch (err) {
       const message = err instanceof Error ? err.message : '登录失败';
       setFormError(message);
+      showError(message);
     }
   };
 

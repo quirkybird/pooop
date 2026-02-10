@@ -84,6 +84,7 @@ export function AvatarSelector({ selectedSeed, onSelect }: AvatarSelectorProps) 
       <div className="flex justify-center gap-3">
         {randomSeeds.map((seed) => (
           <button
+            type="button"
             key={seed}
             onClick={() => onSelect(seed)}
             className={`relative rounded-full p-1 transition-all duration-200 ${
