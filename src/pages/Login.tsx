@@ -1,17 +1,30 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { useAuth } from '../hooks/useAuth';
-import { Mail, Lock, Moon, Heart } from 'lucide-react';
+import { Mail, Lock, Moon, Heart, AlertCircle } from 'lucide-react';
 
 export function Login() {
   const navigate = useNavigate();
-  const { signIn, loading, error } = useAuth();
+  const location = useLocation();
+  const { signIn, loading, error, resetSessionExpired } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [formError, setFormError] = useState('');
+  const [sessionExpiredMessage, setSessionExpiredMessage] = useState<string | null>(null);
+
+  // 检查是否有 session 过期消息
+  useEffect(() => {
+    const state = location.state as { message?: string; sessionExpired?: boolean } | null;
+    if (state?.sessionExpired || state?.message) {
+      setSessionExpiredMessage(state.message || '登录信息已失效，请重新登录');
+      // 清除 URL 中的 state，避免刷新后还显示
+      resetSessionExpired();
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location, navigate, resetSessionExpired]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,6 +105,14 @@ export function Login() {
                 />
               </div>
             </div>
+
+            {/* Session 过期提示 */}
+            {sessionExpiredMessage && (
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700 font-mono flex items-center gap-2">
+                <AlertCircle size={16} />
+                {sessionExpiredMessage}
+              </div>
+            )}
 
             {/* 错误提示 */}
             {(formError || error) && (

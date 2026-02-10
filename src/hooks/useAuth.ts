@@ -6,15 +6,23 @@ interface AuthState {
   user: User | null;
   loading: boolean;
   error: Error | null;
+  sessionExpired: boolean;
+}
+
+interface SignUpResult {
+  user: User;
+  emailVerified: boolean;
 }
 
 interface UseAuthReturn extends AuthState {
   // 认证方法
-  signUp: (email: string, password: string, name: string) => Promise<void>;
+  signUp: (email: string, password: string, name: string, avatarSeed?: string) => Promise<SignUpResult>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   // 辅助方法
   refreshSession: () => Promise<void>;
+  clearSession: () => Promise<void>;
+  resetSessionExpired: () => void;
 }
 
 export function useAuth(): UseAuthReturn {
@@ -22,6 +30,7 @@ export function useAuth(): UseAuthReturn {
     user: null,
     loading: true,
     error: null,
+    sessionExpired: false,
   });
 
   // 初始化：检查现有会话
@@ -54,12 +63,14 @@ export function useAuth(): UseAuthReturn {
         user: session?.user ?? null,
         loading: false,
         error: null,
+        sessionExpired: false,
       });
     } catch (error) {
       setState({
         user: null,
         loading: false,
         error: error as Error,
+        sessionExpired: false,
       });
     }
   };
@@ -68,11 +79,43 @@ export function useAuth(): UseAuthReturn {
     await checkSession();
   }, []);
 
-  const signUp = useCallback(async (email: string, password: string, name: string) => {
+  // 清除会话（用于 403 错误处理）
+  const clearSession = useCallback(async () => {
     try {
-      setState((prev) => ({ ...prev, loading: true, error: null }));
+      // 清除 Supabase 会话
+      await supabase.auth.signOut({ scope: 'local' });
+      
+      setState({
+        user: null,
+        loading: false,
+        error: null,
+        sessionExpired: true,
+      });
+    } catch (error) {
+      console.error('Failed to clear session:', error);
+      // 即使出错也清除本地状态
+      setState({
+        user: null,
+        loading: false,
+        error: null,
+        sessionExpired: true,
+      });
+    }
+  }, []);
 
-      // 创建 Auth 用户，name 放入 user_metadata
+  // 重置 sessionExpired 状态
+  const resetSessionExpired = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      sessionExpired: false,
+    }));
+  }, []);
+
+  const signUp = useCallback(async (email: string, password: string, name: string, avatarSeed?: string): Promise<SignUpResult> => {
+    try {
+      setState((prev) => ({ ...prev, loading: true, error: null, sessionExpired: false }));
+
+      // 创建 Auth 用户，name 和 avatar 放入 user_metadata
       // 数据库触发器会自动创建 public.users 记录
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
@@ -80,12 +123,17 @@ export function useAuth(): UseAuthReturn {
         options: {
           data: {
             name: name, // 触发器会从 NEW.raw_user_meta_data 读取
+            avatar_emoji: avatarSeed || '👤', // 头像 seed
           }
         }
       });
 
       if (authError) throw authError;
       if (!authData.user) throw new Error('注册失败，未返回用户信息');
+
+      // 检查邮箱是否已验证
+      // Supabase 使用 email_confirmed_at 字段来判断
+      const emailVerified = !!authData.user.email_confirmed_at;
 
       // 注意：不需要手动创建 public.users 记录
       // 数据库触发器 handle_new_user 会自动处理
@@ -94,12 +142,19 @@ export function useAuth(): UseAuthReturn {
         user: authData.user,
         loading: false,
         error: null,
+        sessionExpired: false,
       });
+
+      return {
+        user: authData.user,
+        emailVerified,
+      };
     } catch (error) {
       setState((prev) => ({
         ...prev,
         loading: false,
         error: error as Error,
+        sessionExpired: false,
       }));
       throw error;
     }
@@ -107,7 +162,7 @@ export function useAuth(): UseAuthReturn {
 
   const signIn = useCallback(async (email: string, password: string) => {
     try {
-      setState((prev) => ({ ...prev, loading: true, error: null }));
+      setState((prev) => ({ ...prev, loading: true, error: null, sessionExpired: false }));
 
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -120,12 +175,14 @@ export function useAuth(): UseAuthReturn {
         user: data.user,
         loading: false,
         error: null,
+        sessionExpired: false,
       });
     } catch (error) {
       setState((prev) => ({
         ...prev,
         loading: false,
         error: error as Error,
+        sessionExpired: false,
       }));
       throw error;
     }
@@ -142,12 +199,14 @@ export function useAuth(): UseAuthReturn {
         user: null,
         loading: false,
         error: null,
+        sessionExpired: false,
       });
     } catch (error) {
       setState((prev) => ({
         ...prev,
         loading: false,
         error: error as Error,
+        sessionExpired: false,
       }));
       throw error;
     }
@@ -159,6 +218,8 @@ export function useAuth(): UseAuthReturn {
     signIn,
     signOut,
     refreshSession,
+    clearSession,
+    resetSessionExpired,
   };
 }
 

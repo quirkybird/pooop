@@ -17,6 +17,7 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { HeartButton } from '../components/HeartButton';
 import { ReminderCardComponent } from '../components/ReminderCard';
+import { DicebearAvatar } from '../components/AvatarSelector';
 import { supabaseApi as api, SHAPE_OPTIONS, MOOD_OPTIONS } from '../services/supabaseApi';
 import useExtendedStore from '../stores/useStore';
 import type { PooRecord } from '../types';
@@ -112,9 +113,9 @@ export function Home() {
       >
         <div className="flex items-start gap-4">
           {/* 用户头像 */}
-          <div className="w-12 h-12 rounded-full bg-cream-warm flex items-center justify-center">
+          <div className="w-12 h-12 rounded-full bg-cream-warm flex items-center justify-center overflow-hidden">
             {user?.avatar ? (
-              <span className="text-2xl">{user.avatar}</span>
+              <DicebearAvatar seed={user.avatar} size={48} />
             ) : (
               <User size={24} className="text-primary/60" />
             )}
@@ -207,7 +208,9 @@ export function Home() {
             {currentUser && (
               <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-full shadow-sm border border-primary/10">
                 {currentUser.avatar ? (
-                 <span className="text-xl">{currentUser.avatar}</span>
+                 <div className="w-8 h-8 rounded-full overflow-hidden">
+                   <DicebearAvatar seed={currentUser.avatar} size={32} />
+                 </div>
                ) : (
                  <User size={20} className="text-primary/60" />
                )}
@@ -249,7 +252,9 @@ export function Home() {
           <div className="mb-6 p-4 bg-gradient-to-r from-pink-soft to-cream rounded-2xl border border-pink/20">
             <div className="flex items-center gap-3">
               {partner.avatar ? (
-               <span className="text-3xl">{partner.avatar}</span>
+               <div className="w-10 h-10 rounded-full overflow-hidden">
+                 <DicebearAvatar seed={partner.avatar} size={40} />
+               </div>
              ) : (
                <User size={32} className="text-primary/60" />
              )}

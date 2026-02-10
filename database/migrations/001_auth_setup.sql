@@ -161,11 +161,12 @@ BEGIN
   -- 生成邀请码
   invite_code := upper(substring(md5(random()::text) from 1 for 8));
   
-  INSERT INTO public.users (auth_id, email, name, invite_code)
+  INSERT INTO public.users (auth_id, email, name, avatar_emoji, invite_code)
   VALUES (
     NEW.id,
     NEW.email,
     COALESCE(NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1)),
+    COALESCE(NEW.raw_user_meta_data->>'avatar_emoji', '👤'),
     invite_code
   );
   

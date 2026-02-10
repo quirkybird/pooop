@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { useAuth } from '../hooks/useAuth';
-import { Mail, Lock, User, Moon, Heart } from 'lucide-react';
+import { AvatarSelector } from '../components/AvatarSelector';
+import { Mail, Lock, User, Moon, Heart, CheckCircle } from 'lucide-react';
 
 export function Register() {
   const navigate = useNavigate();
@@ -13,7 +14,23 @@ export function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [avatarSeed, setAvatarSeed] = useState('Felix');
   const [formError, setFormError] = useState('');
+  const [showEmailVerifyPrompt, setShowEmailVerifyPrompt] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
+  const verifyPromptRef = useRef<HTMLDivElement>(null);
+
+  // 当显示验证提示时，自动滚动到该位置
+  useEffect(() => {
+    if (showEmailVerifyPrompt && verifyPromptRef.current) {
+      setTimeout(() => {
+        verifyPromptRef.current?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+      }, 100);
+    }
+  }, [showEmailVerifyPrompt]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,8 +53,16 @@ export function Register() {
     }
 
     try {
-      await signUp(email.trim(), password, name.trim());
-      navigate('/', { replace: true });
+      const result = await signUp(email.trim(), password, name.trim(), avatarSeed);
+      
+      if (result.emailVerified) {
+        // 邮箱已验证，直接跳转到首页
+        navigate('/', { replace: true });
+      } else {
+        // 邮箱未验证，显示提示
+        setRegisteredEmail(email);
+        setShowEmailVerifyPrompt(true);
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : '注册失败';
       setFormError(message);
@@ -64,6 +89,12 @@ export function Register() {
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* 头像选择 */}
+            <AvatarSelector
+              selectedSeed={avatarSeed}
+              onSelect={setAvatarSeed}
+            />
+
             {/* 昵称输入 */}
             <div>
               <label className="block text-sm font-mono text-primary/70 mb-2">
@@ -182,10 +213,45 @@ export function Register() {
           </div>
         </Card>
 
+        {/* 邮箱验证提示 */}
+        {showEmailVerifyPrompt && (
+          <Card ref={verifyPromptRef} className="mt-6 border-amber-200 bg-amber-50">
+            <div className="py-4 text-center">
+              <div className="flex justify-center mb-3">
+                <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
+                  <Mail size={24} className="text-amber-600" />
+                </div>
+              </div>
+              <h3 className="font-serif text-lg text-amber-800 mb-2">
+                请验证您的邮箱
+              </h3>
+              <p className="text-sm text-amber-700 font-mono mb-4">
+                我们已向 <span className="font-bold">{registeredEmail}</span> 发送了验证邮件<br />
+                请查看邮箱并点击验证链接完成注册
+              </p>
+              <div className="flex gap-3 justify-center">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => navigate('/login')}
+                >
+                  <CheckCircle size={16} />
+                  <span>去登录</span>
+                </Button>
+              </div>
+              <p className="text-xs text-amber-600/70 font-mono mt-3">
+                验证完成后即可登录使用
+              </p>
+            </div>
+          </Card>
+        )}
+
         {/* 提示 */}
-        <p className="text-center text-xs text-primary/40 font-mono mt-6">
-          注册即表示您同意我们的服务条款
-        </p>
+        {!showEmailVerifyPrompt && (
+          <p className="text-center text-xs text-primary/40 font-mono mt-6">
+            注册即表示您同意我们的服务条款
+          </p>
+        )}
       </div>
     </div>
   );

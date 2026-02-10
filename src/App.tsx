@@ -6,6 +6,7 @@ import { Bind } from './pages/Bind';
 import { History } from './pages/History';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
+import { EmailVerified } from './pages/EmailVerified';
 import './index.css';
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
         {/* 公开路由 */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/email-verified" element={<EmailVerified />} />
         
         {/* 受保护路由 */}
         <Route

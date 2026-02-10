@@ -6,6 +6,7 @@ import { ChevronLeft, Calendar, ChevronLeft as PrevIcon, ChevronRight as NextIco
 import { format, addDays, startOfWeek, isSameDay } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import { Card } from '../components/Card';
+import { DicebearAvatar } from '../components/AvatarSelector';
 import { supabaseApi as api, SHAPE_OPTIONS, MOOD_OPTIONS } from '../services/supabaseApi';
 import useExtendedStore from '../stores/useStore';
 import type { PooRecord } from '../types';
@@ -251,7 +252,9 @@ export function History() {
                       >
                         <div className="flex items-center gap-3">
                           {user?.avatar ? (
-                           <span className="text-2xl">{user.avatar}</span>
+                           <div className="w-8 h-8 rounded-full overflow-hidden">
+                             <DicebearAvatar seed={user.avatar} size={32} />
+                           </div>
                          ) : (
                            <User size={24} className="text-primary/60" />
                          )}
