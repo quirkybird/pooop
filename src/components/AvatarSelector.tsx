@@ -29,6 +29,7 @@ export function DicebearAvatar({ seed, size = 64, className = '' }: DicebearAvat
 interface AvatarSelectorProps {
   selectedSeed: string;
   onSelect: (seed: string) => void;
+  seeds?: string[];
 }
 
 // 预定义20个头像种子
@@ -56,7 +57,7 @@ const AVATAR_SEEDS_POOL = [
 ];
 
 //  Fisher-Yates 洗牌算法，随机选择4个
-function getRandomSeeds(count: number = 4): string[] {
+export function getRandomSeeds(count: number = 4): string[] {
   const shuffled = [...AVATAR_SEEDS_POOL];
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -65,9 +66,9 @@ function getRandomSeeds(count: number = 4): string[] {
   return shuffled.slice(0, count);
 }
 
-export function AvatarSelector({ selectedSeed, onSelect }: AvatarSelectorProps) {
+export function AvatarSelector({ selectedSeed, onSelect, seeds }: AvatarSelectorProps) {
   // 使用 useMemo 随机选择4个头像，保持稳定性
-  const randomSeeds = useMemo(() => getRandomSeeds(4), []);
+  const randomSeeds = useMemo(() => seeds ?? getRandomSeeds(4), [seeds]);
   
   // 如果没有选中任何头像，默认选中第一个
   useEffect(() => {

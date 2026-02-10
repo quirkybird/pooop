@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { X, Check } from 'lucide-react';
+import { X, Check, RotateCcw } from 'lucide-react';
 import { Button } from './Button';
-import { DicebearAvatar, AvatarSelector } from './AvatarSelector';
+import { DicebearAvatar, AvatarSelector, getRandomSeeds } from './AvatarSelector';
 import { supabaseApi as api } from '../services/supabaseApi';
 import { useToast } from '../hooks/useToast';
 
@@ -22,6 +22,7 @@ export function AvatarEditModal({
 }: AvatarEditModalProps) {
   const [selectedSeed, setSelectedSeed] = useState(currentAvatar);
   const [isSaving, setIsSaving] = useState(false);
+  const [avatarSeeds, setAvatarSeeds] = useState(() => getRandomSeeds(4));
   const { success, error: showError } = useToast();
 
   const handleSave = async () => {
@@ -78,10 +79,22 @@ export function AvatarEditModal({
             </div>
           </div>
 
+          <div className="flex justify-end mb-2">
+            <button
+              type="button"
+              onClick={() => setAvatarSeeds(getRandomSeeds(4))}
+              className="inline-flex items-center gap-2 rounded-full border border-primary/10 bg-white px-3 py-1.5 text-xs font-mono text-primary/70 shadow-sm transition-colors hover:bg-cream-warm"
+            >
+              <RotateCcw size={14} />
+              刷新
+            </button>
+          </div>
+
           {/* 头像选择器 */}
           <AvatarSelector
             selectedSeed={selectedSeed}
             onSelect={setSelectedSeed}
+            seeds={avatarSeeds}
           />
         </div>
 

@@ -201,6 +201,28 @@ export const supabaseApi = {
       }
     },
 
+    getRecordsByDateRange: async (userId: string, startDate: Date, endDate: Date): Promise<ApiResponse<PooRecord[]>> => {
+      try {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+
+        const { data, error } = await supabase
+          .from('poo_records')
+          .select('*')
+          .eq('user_id', userId)
+          .gte('happened_at', start.toISOString())
+          .lte('happened_at', end.toISOString())
+          .order('happened_at', { ascending: false });
+
+        if (error) throw error;
+        return createResponse((data || []).map(transformRecord));
+      } catch (error) {
+        return handleError(error);
+      }
+    },
+
     create: async (request: CreateRecordRequest): Promise<ApiResponse<PooRecord>> => {
       try {
         // 从 shapeId 提取 shape_type (例如 'shape-3' -> 3)
@@ -250,6 +272,55 @@ export const supabaseApi = {
           recordId: data.record_id,
           createdAt: data.created_at
         });
+      } catch (error) {
+        return handleError(error);
+      }
+    },
+
+    remove: async (fromUserId: string, toUserId: string, recordId: string): Promise<ApiResponse<boolean>> => {
+      try {
+        const { data, error } = await supabase
+          .from('heart_reactions')
+          .delete()
+          .eq('from_user_id', fromUserId)
+          .eq('to_user_id', toUserId)
+          .eq('record_id', recordId)
+          .select('id');
+
+        if (error) throw error;
+        return createResponse((data?.length || 0) > 0);
+      } catch (error) {
+        return handleError(error);
+      }
+    },
+
+    getReactionsForRecords: async (recordIds: string[], toUserId?: string): Promise<ApiResponse<HeartReaction[]>> => {
+      try {
+        if (recordIds.length === 0) {
+          return createResponse([]);
+        }
+
+        let query = supabase
+          .from('heart_reactions')
+          .select('*')
+          .in('record_id', recordIds);
+
+        if (toUserId) {
+          query = query.eq('to_user_id', toUserId);
+        }
+
+        const { data, error } = await query;
+
+        if (error) throw error;
+        return createResponse(
+          (data || []).map((item) => ({
+            id: item.id,
+            fromUserId: item.from_user_id,
+            toUserId: item.to_user_id,
+            recordId: item.record_id,
+            createdAt: item.created_at
+          }))
+        );
       } catch (error) {
         return handleError(error);
       }

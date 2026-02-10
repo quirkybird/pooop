@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
@@ -15,7 +15,6 @@ import {
 } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
-import { HeartButton } from '../components/HeartButton';
 import { ReminderCardComponent } from '../components/ReminderCard';
 import { DicebearAvatar } from '../components/AvatarSelector';
 import { AvatarEditModal } from '../components/AvatarEditModal';
@@ -41,6 +40,16 @@ export function Home() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const sortedTodayRecords = useMemo(() => {
+    const combined = [
+      ...todayRecords.map((record) => ({ record, isPartner: false })),
+      ...partnerTodayRecords.map((record) => ({ record, isPartner: true })),
+    ];
+
+    return combined.sort(
+      (a, b) => new Date(b.record.timestamp).getTime() - new Date(a.record.timestamp).getTime()
+    );
+  }, [todayRecords, partnerTodayRecords]);
 
   useEffect(() => {
     loadData();
@@ -146,11 +155,13 @@ export function Home() {
                   {format(new Date(record.timestamp), 'HH:mm')}
                 </span>
               </div>
-              {mood && (
-                <span className="text-xl" title={mood.label}>
-                  {mood.emoji}
-                </span>
-              )}
+              <div className="flex items-center gap-2">
+                {mood && (
+                  <span className="text-xl" title={mood.label}>
+                    {mood.emoji}
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* 形状信息 */}
@@ -176,17 +187,6 @@ export function Home() {
               </p>
             )}
 
-            {/* 互动按钮 */}
-            {isPartner && currentUser && (
-              <div className="mt-3 flex justify-end">
-                <HeartButton
-                  record={record}
-                  currentUserId={currentUser.id}
-                  partnerId={partner?.id || ''}
-                  initialCount={0}
-                />
-              </div>
-            )}
           </div>
         </div>
       </Card>
@@ -212,10 +212,7 @@ export function Home() {
       <header className="sticky top-0 z-10 bg-cream/95 backdrop-blur-sm border-b border-primary/5 px-4 py-4">
         <div className="max-w-md mx-auto flex items-center justify-between">
           <div>
-            <p className="font-mono text-xs text-primary/50 mb-1">
-              {format(new Date(), 'yyyy年M月d日 EEEE', { locale: zhCN })}
-            </p>
-            <h1 className="font-serif text-2xl text-primary flex items-center gap-2">今日便便 <Heart size={20} className="text-pink" /></h1>
+            <h1 className="font-serif text-2xl text-primary flex items-center gap-2">便便实况播报 <Heart size={20} className="text-pink" /></h1>
           </div>
           <div className="flex items-center gap-2">
             {/* 当前用户信息 */}
@@ -268,13 +265,26 @@ export function Home() {
         {partner && (
           <div className="mb-6 p-4 bg-gradient-to-r from-pink-soft to-cream rounded-2xl border border-pink/20">
             <div className="flex items-center gap-3">
-              {partner.avatar ? (
-               <div className="w-10 h-10 rounded-full overflow-hidden">
-                 <DicebearAvatar seed={partner.avatar} size={40} />
-               </div>
-             ) : (
-               <User size={32} className="text-primary/60" />
-             )}
+              <div className="flex items-center -space-x-2">
+                <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-cream-warm bg-cream-warm">
+                  {currentUser?.avatar ? (
+                    <DicebearAvatar seed={currentUser.avatar} size={40} />
+                  ) : (
+                    <div className="w-10 h-10 flex items-center justify-center">
+                      <User size={24} className="text-primary/60" />
+                    </div>
+                  )}
+                </div>
+                <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-cream-warm bg-cream-warm">
+                  {partner.avatar ? (
+                    <DicebearAvatar seed={partner.avatar} size={40} />
+                  ) : (
+                    <div className="w-10 h-10 flex items-center justify-center">
+                      <User size={24} className="text-primary/60" />
+                    </div>
+                  )}
+                </div>
+              </div>
               <div>
                 <p className="font-serif text-primary">
                   与 <span className="text-pink">{partner.name}</span> 甜蜜绑定中
@@ -311,9 +321,8 @@ export function Home() {
             </Card>
           ) : (
             <>
-              {todayRecords.map((record) => renderRecordCard(record, false))}
-              {partnerTodayRecords.map((record) =>
-                renderRecordCard(record, true)
+              {sortedTodayRecords.map(({ record, isPartner }) =>
+                renderRecordCard(record, isPartner)
               )}
             </>
           )}

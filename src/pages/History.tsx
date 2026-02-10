@@ -1,13 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Calendar, ChevronLeft as PrevIcon, ChevronRight as NextIcon, BarChart3, Toilet, User, Inbox, RotateCcw } from 'lucide-react';
-
-// 这些导入实际上都在使用，但可能在文件的后面部分
-import { format, addDays, startOfWeek, isSameDay } from 'date-fns';
+import { ChevronLeft, Calendar, ChevronLeft as PrevIcon, ChevronRight as NextIcon, BarChart3, Toilet, Inbox, RotateCcw } from 'lucide-react';
+import { format, addDays, startOfWeek, endOfWeek, isSameDay, startOfDay, endOfDay } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import { Card } from '../components/Card';
-import { DicebearAvatar } from '../components/AvatarSelector';
-import { supabaseApi as api, SHAPE_OPTIONS, MOOD_OPTIONS } from '../services/supabaseApi';
+import { Timeline } from '../components/Timeline';
+import { supabaseApi as api, MOOD_OPTIONS } from '../services/supabaseApi';
 import useExtendedStore from '../stores/useStore';
 import type { PooRecord } from '../types';
 
@@ -19,25 +17,28 @@ export function History() {
   const [weekRecords, setWeekRecords] = useState<PooRecord[]>([]);
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const didInitSelectRef = useRef(false);
 
-  const weekStart = startOfWeek(currentWeek, { weekStartsOn: 1 }); // 周一开始
+  const weekStart = useMemo(() => startOfWeek(currentWeek, { weekStartsOn: 1 }), [currentWeek]);
+  const weekEnd = useMemo(() => endOfWeek(currentWeek, { weekStartsOn: 1 }), [currentWeek]);
+  const weekDays = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
 
-  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const isCurrentWeek = useMemo(
+    () => isSameDay(weekStart, startOfWeek(new Date(), { weekStartsOn: 1 })),
+    [weekStart]
+  );
 
-  useEffect(() => {
-    loadWeekRecords();
-  }, [currentWeek, currentUser]);
-
-  const loadWeekRecords = async () => {
-    if (!currentUser) return;
+  const loadWeekRecords = useCallback(async () => {
+    if (!currentUser) {
+      setIsLoading(false);
+      return;
+    }
 
     setIsLoading(true);
     try {
-      // 这里使用模拟数据，实际应该从API获取指定日期范围的记录
-      // 现在使用今日记录作为示例
       const [myRecords, partnerRecords] = await Promise.all([
-        api.record.getTodayRecords(currentUser.id),
-        partner ? api.record.getTodayRecords(partner.id) : Promise.resolve({ success: true, data: [] }),
+        api.record.getRecordsByDateRange(currentUser.id, weekStart, weekEnd),
+        partner ? api.record.getRecordsByDateRange(partner.id, weekStart, weekEnd) : Promise.resolve({ success: true, data: [] }),
       ]);
 
       const allRecords = [
@@ -51,21 +52,30 @@ export function History() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentUser, partner, weekStart, weekEnd]);
 
-  const getRecordsForDay = (day: Date) => {
-    return weekRecords.filter((record) =>
-      isSameDay(new Date(record.timestamp), day)
-    );
-  };
+  useEffect(() => {
+    if (currentUser) {
+      loadWeekRecords();
+    } else {
+      setIsLoading(false);
+    }
+  }, [currentUser, loadWeekRecords]);
 
-  const getShapeInfo = (shapeId: string) => {
-    return SHAPE_OPTIONS.find((s) => s.id === shapeId);
-  };
+  useEffect(() => {
+    if (!currentUser) {
+      return;
+    }
 
-  const getMoodInfo = (moodId: string) => {
-    return MOOD_OPTIONS.find((m) => m.id === moodId);
-  };
+    if (!didInitSelectRef.current && !selectedDay && isCurrentWeek) {
+      setSelectedDay(new Date());
+      didInitSelectRef.current = true;
+    }
+  }, [currentUser, selectedDay, isCurrentWeek]);
+
+  const getRecordsForDay = useCallback((day: Date) => {
+    return weekRecords.filter((record) => isSameDay(new Date(record.timestamp), day));
+  }, [weekRecords]);
 
   const prevWeek = () => {
     setCurrentWeek((prev) => addDays(prev, -7));
@@ -77,17 +87,18 @@ export function History() {
     setSelectedDay(null);
   };
 
-  const handleDayClick = (day: Date) => {
-    setSelectedDay(day);
+  const handleDayClick = async (day: Date) => {
+    if (selectedDay && isSameDay(day, selectedDay)) {
+      setSelectedDay(null);
+    } else {
+      setSelectedDay(day);
+    }
   };
 
   const handleShowAll = () => {
     setSelectedDay(null);
   };
 
-  const isCurrentWeek = isSameDay(weekStart, startOfWeek(new Date(), { weekStartsOn: 1 }));
-
-  // 获取要显示的记录
   const displayRecords = selectedDay
     ? getRecordsForDay(selectedDay)
     : weekRecords;
@@ -116,7 +127,7 @@ export function History() {
           </button>
           <div className="text-center">
             <p className="font-serif text-lg text-primary">
-              {isCurrentWeek ? '本周' : format(weekStart, 'M月d日', { locale: zhCN })}
+              {isCurrentWeek ? '本周' : format(weekStart, 'M月', { locale: zhCN })}
             </p>
             <p className="text-xs text-primary/50 font-mono">
               {format(weekStart, 'yyyy年')}
@@ -131,7 +142,7 @@ export function History() {
         </div>
 
         {/* 周历视图 */}
-        <div className="grid grid-cols-7 gap-1">
+        <div className="grid grid-cols-7 gap-2">
           {['一', '二', '三', '四', '五', '六', '日'].map((day) => (
             <div key={day} className="text-center py-2">
               <span className="text-xs text-primary/40 font-mono">{day}</span>
@@ -142,6 +153,31 @@ export function History() {
             const isToday = isSameDay(day, new Date());
             const hasRecords = dayRecords.length > 0;
             const isSelected = selectedDay && isSameDay(day, selectedDay);
+            const latestMoodByUser = dayRecords.reduce<Map<string, string>>((acc, record) => {
+              const ts = new Date(record.timestamp).getTime();
+              const prev = acc.get(record.userId);
+              if (!prev || ts > new Date(prev).getTime()) {
+                acc.set(record.userId, record.timestamp);
+              }
+              return acc;
+            }, new Map());
+
+            const latestMoodForUser = (userId?: string) => {
+              if (!userId) return null;
+              const latestTimestamp = latestMoodByUser.get(userId);
+              if (!latestTimestamp) return null;
+              const latestRecord = dayRecords
+                .filter((record) => record.userId === userId)
+                .reduce<PooRecord | null>((latest, record) => {
+                  if (!latest) return record;
+                  return new Date(record.timestamp) > new Date(latest.timestamp) ? record : latest;
+                }, null);
+              return latestRecord ? MOOD_OPTIONS.find((m) => m.id === latestRecord.moodId)?.emoji || '•' : null;
+            };
+
+            const myMoodEmoji = latestMoodForUser(currentUser?.id);
+            const partnerMoodEmoji = latestMoodForUser(partner?.id);
+            const moodEmojis = [myMoodEmoji, partnerMoodEmoji].filter(Boolean) as string[];
 
             return (
               <button
@@ -166,14 +202,11 @@ export function History() {
                 </span>
                 {hasRecords && (
                   <div className="flex gap-0.5">
-                    {dayRecords.slice(0, 3).map((record, idx) => {
-                      const mood = getMoodInfo(record.moodId);
-                      return (
-                        <span key={idx} className="text-xs">
-                          {mood?.emoji || '•'}
-                        </span>
-                      );
-                    })}
+                    {moodEmojis.map((emoji, idx) => (
+                      <span key={idx} className="text-xs">
+                        {emoji}
+                      </span>
+                    ))}
                   </div>
                 )}
               </button>
@@ -187,7 +220,7 @@ export function History() {
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-serif text-lg text-primary flex items-center gap-2">
             <Calendar size={18} />
-            {selectedDay 
+            {selectedDay
               ? format(selectedDay, 'M月d日', { locale: zhCN }) + '的记录'
               : (isCurrentWeek ? '本周记录' : '该周记录')
             }
@@ -222,70 +255,23 @@ export function History() {
               {selectedDay ? '点击"显示全部"查看整周' : '记得每天记录哦'}
             </p>
           </Card>
+        ) : selectedDay ? (
+          <Timeline
+            items={[{ date: selectedDay, records: displayRecords }]}
+            currentUser={currentUser}
+            partner={partner}
+          />
         ) : (
-          <div className="space-y-4">
-            {(selectedDay ? [selectedDay] : weekDays).map((day) => {
-              const dayRecords = selectedDay 
-                ? displayRecords 
-                : getRecordsForDay(day);
-              
-              if (dayRecords.length === 0) return null;
-
-              return (
-                <div key={day.toISOString()}>
-                  {!selectedDay && (
-                    <p className="text-xs text-primary/40 font-mono mb-2 px-1">
-                      {format(day, 'M月d日 EEEE', { locale: zhCN })}
-                    </p>
-                  )}
-                  {dayRecords.map((record) => {
-                    const shape = getShapeInfo(record.shapeId);
-                    const mood = getMoodInfo(record.moodId);
-                    const isPartner = record.userId === partner?.id;
-                    const user = isPartner ? partner : currentUser;
-
-                    return (
-                      <Card
-                        key={record.id}
-                        variant={isPartner ? 'partner' : 'default'}
-                        className="mb-3"
-                      >
-                        <div className="flex items-center gap-3">
-                          {user?.avatar ? (
-                           <div className="w-8 h-8 rounded-full overflow-hidden">
-                             <DicebearAvatar seed={user.avatar} size={32} />
-                           </div>
-                         ) : (
-                           <User size={24} className="text-primary/60" />
-                         )}
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              {shape && (
-                                <>
-                                  <span>{shape.emoji}</span>
-                                  <span className="text-sm font-medium text-primary">
-                                    {shape.label}
-                                  </span>
-                                </>
-                              )}
-                              {mood && (
-                                <span className="text-lg" title={mood.label}>
-                                  {mood.emoji}
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-xs text-primary/50 font-mono">
-                              {format(new Date(record.timestamp), 'HH:mm')}
-                            </p>
-                          </div>
-                        </div>
-                      </Card>
-                    );
-                  })}
-                </div>
-              );
-            })}
-          </div>
+          <Timeline
+            items={weekDays
+              .map((day) => ({
+                date: day,
+                records: getRecordsForDay(day),
+              }))
+              .filter((item) => item.records.length > 0)}
+            currentUser={currentUser}
+            partner={partner}
+          />
         )}
       </div>
     </div>
