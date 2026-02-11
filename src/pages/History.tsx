@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Calendar, ChevronLeft as PrevIcon, ChevronRight as NextIcon, BarChart3, Toilet, Inbox, RotateCcw } from 'lucide-react';
-import { format, addDays, startOfWeek, endOfWeek, isSameDay, startOfDay, endOfDay } from 'date-fns';
+import { format, addDays, startOfWeek, endOfWeek, isSameDay } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import { Card } from '../components/Card';
 import { Timeline } from '../components/Timeline';
