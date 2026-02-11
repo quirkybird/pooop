@@ -254,41 +254,73 @@ export const supabaseApi = {
   reaction: {
     create: async (request: CreateReactionRequest): Promise<ApiResponse<HeartReaction>> => {
       try {
-        const { data, error } = await supabase
+        // 软删除方案：先查询是否已有记录
+        const { data: existingData, error: queryError } = await supabase
           .from('heart_reactions')
-          .insert({
-            from_user_id: request.fromUserId,
-            to_user_id: request.toUserId,
-            record_id: request.recordId
-          })
-          .select()
-          .single();
+          .select('id, is_liked')
+          .eq('from_user_id', request.fromUserId)
+          .eq('record_id', request.recordId)
+          .limit(1);
 
-        if (error) throw error;
-        return createResponse({
-          id: data.id,
-          fromUserId: data.from_user_id,
-          toUserId: data.to_user_id,
-          recordId: data.record_id,
-          createdAt: data.created_at
-        });
+        if (queryError) throw queryError;
+
+        if (existingData && existingData.length > 0) {
+          // 已有记录，更新为 is_liked = true
+          const { data, error } = await supabase
+            .from('heart_reactions')
+            .update({ is_liked: true })
+            .eq('id', existingData[0].id)
+            .select()
+            .single();
+
+          if (error) throw error;
+          return createResponse({
+            id: data.id,
+            fromUserId: data.from_user_id,
+            toUserId: data.to_user_id,
+            recordId: data.record_id,
+            isActive: data.is_liked,
+            createdAt: data.created_at
+          });
+        } else {
+          // 没有记录，插入新记录
+          const { data, error } = await supabase
+            .from('heart_reactions')
+            .insert({
+              from_user_id: request.fromUserId,
+              to_user_id: request.toUserId,
+              record_id: request.recordId,
+              is_liked: true
+            })
+            .select()
+            .single();
+
+          if (error) throw error;
+          return createResponse({
+            id: data.id,
+            fromUserId: data.from_user_id,
+            toUserId: data.to_user_id,
+            recordId: data.record_id,
+            isActive: data.is_liked,
+            createdAt: data.created_at
+          });
+        }
       } catch (error) {
         return handleError(error);
       }
     },
 
-    remove: async (fromUserId: string, toUserId: string, recordId: string): Promise<ApiResponse<boolean>> => {
+    remove: async (fromUserId: string, _toUserId: string, recordId: string): Promise<ApiResponse<boolean>> => {
       try {
-        const { data, error } = await supabase
+        // 软删除：将 is_liked 设置为 false
+        const { error } = await supabase
           .from('heart_reactions')
-          .delete()
+          .update({ is_liked: false })
           .eq('from_user_id', fromUserId)
-          .eq('to_user_id', toUserId)
-          .eq('record_id', recordId)
-          .select('id');
+          .eq('record_id', recordId);
 
         if (error) throw error;
-        return createResponse((data?.length || 0) > 0);
+        return createResponse(true);
       } catch (error) {
         return handleError(error);
       }
@@ -303,7 +335,8 @@ export const supabaseApi = {
         let query = supabase
           .from('heart_reactions')
           .select('*')
-          .in('record_id', recordIds);
+          .in('record_id', recordIds)
+          .eq('is_liked', true); // 只查询有效的点赞
 
         if (toUserId) {
           query = query.eq('to_user_id', toUserId);
@@ -318,6 +351,7 @@ export const supabaseApi = {
             fromUserId: item.from_user_id,
             toUserId: item.to_user_id,
             recordId: item.record_id,
+            isActive: item.is_liked,
             createdAt: item.created_at
           }))
         );
@@ -347,10 +381,44 @@ export const supabaseApi = {
           .select('id')
           .eq('from_user_id', userId)
           .eq('record_id', recordId)
+          .eq('is_liked', true)
           .limit(1);
 
         if (error) throw error;
         return createResponse((data?.length || 0) > 0);
+      } catch (error) {
+        return handleError(error);
+      }
+    },
+
+    // 获取今天收到的爱心（to_user_id 是当前用户）
+    getTodayReceivedHearts: async (userId: string): Promise<ApiResponse<HeartReaction[]>> => {
+      try {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        const { data, error } = await supabase
+          .from('heart_reactions')
+          .select('*')
+          .eq('to_user_id', userId)
+          .eq('is_liked', true)
+          .gte('created_at', today.toISOString())
+          .lt('created_at', tomorrow.toISOString())
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        return createResponse(
+          (data || []).map((item) => ({
+            id: item.id,
+            fromUserId: item.from_user_id,
+            toUserId: item.to_user_id,
+            recordId: item.record_id,
+            isActive: item.is_liked,
+            createdAt: item.created_at
+          }))
+        );
       } catch (error) {
         return handleError(error);
       }

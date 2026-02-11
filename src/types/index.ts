@@ -44,6 +44,7 @@ export interface HeartReaction {
   fromUserId: string;
   toUserId: string;
   recordId: string;
+  isActive: boolean;
   createdAt: string;
 }
 

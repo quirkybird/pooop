@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import {
@@ -19,7 +19,7 @@ import { DicebearAvatar } from '../components/AvatarSelector';
 import { AvatarEditModal } from '../components/AvatarEditModal';
 import { supabaseApi as api, SHAPE_OPTIONS, MOOD_OPTIONS } from '../services/supabaseApi';
 import useExtendedStore from '../stores/useStore';
-import type { PooRecord } from '../types';
+import type { PooRecord, HeartReaction } from '../types';
 
 export function Home() {
   const navigate = useNavigate();
@@ -39,6 +39,25 @@ export function Home() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
+  
+  // 爱心数据状态
+  const [userHeartedRecords, setUserHeartedRecords] = useState<Set<string>>(new Set());
+  const userHeartedRecordsRef = useRef(userHeartedRecords);
+  
+  // 保持 ref 同步
+  useEffect(() => {
+    userHeartedRecordsRef.current = userHeartedRecords;
+  }, [userHeartedRecords]);
+  
+  // 浮动爱心动画状态
+  const [floatingHearts, setFloatingHearts] = useState<Array<{ id: string; recordId: string; x: number; y: number }>>([]);
+  
+  // 正在处理中的记录（防止重复点击）
+  const [processingHearts, setProcessingHearts] = useState<Set<string>>(new Set());
+  
+  // 今天收到的爱心
+  const [receivedHearts, setReceivedHearts] = useState<HeartReaction[]>([]);
+  
   const sortedTodayRecords = useMemo(() => {
     const combined = [
       ...todayRecords.map((record) => ({ record, isPartner: false })),
@@ -49,10 +68,6 @@ export function Home() {
       (a, b) => new Date(b.record.timestamp).getTime() - new Date(a.record.timestamp).getTime()
     );
   }, [todayRecords, partnerTodayRecords]);
-
-  useEffect(() => {
-    loadData();
-  }, []);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -86,6 +101,12 @@ export function Home() {
           if (reminderRes.success) {
             setReminderCards(reminderRes.data);
           }
+          
+          // 获取今天收到的爱心（来自伴侣的）
+          const receivedHeartsRes = await api.reaction.getTodayReceivedHearts(userRes.data.id);
+          if (receivedHeartsRes.success) {
+            setReceivedHearts(receivedHeartsRes.data);
+          }
         }
       }
     } catch (error) {
@@ -95,12 +116,199 @@ export function Home() {
     }
   };
 
+  // 加载爱心数据
+  const loadHeartData = useCallback(async () => {
+    if (!currentUser || sortedTodayRecords.length === 0) return;
+
+    const recordIds = sortedTodayRecords.map(({ record }) => record.id);
+    
+    // 获取所有爱心反应，只检查当前用户是否点赞
+    const reactionsRes = await api.reaction.getReactionsForRecords(recordIds);
+    if (reactionsRes.success) {
+      const userHearted = new Set<string>();
+      
+      reactionsRes.data.forEach((reaction) => {
+        if (reaction.fromUserId === currentUser.id) {
+          userHearted.add(reaction.recordId);
+        }
+      });
+      
+      setUserHeartedRecords(userHearted);
+    }
+  }, [currentUser, sortedTodayRecords]);
+
+  // 处理爱心点击（乐观更新）
+  const handleHeartClick = useCallback(async (recordId: string, toUserId: string, buttonElement: HTMLButtonElement | null) => {
+    if (!currentUser) return;
+    
+    // 如果正在处理中，直接返回（防止重复点击）
+    if (processingHearts.has(recordId)) return;
+    
+    // 标记为处理中
+    setProcessingHearts((prev) => new Set(prev).add(recordId));
+
+    const hasHearted = userHeartedRecordsRef.current.has(recordId);
+    
+    // 1. 乐观更新：立即改变前端状态
+    if (hasHearted) {
+      // 乐观取消点赞
+      setUserHeartedRecords((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(recordId);
+        return newSet;
+      });
+    } else {
+      // 乐观添加点赞
+      setUserHeartedRecords((prev) => {
+        const newSet = new Set(prev);
+        newSet.add(recordId);
+        return newSet;
+      });
+      
+      // 触发浮动爱心动画
+      if (buttonElement) {
+        const rect = buttonElement.getBoundingClientRect();
+        const heartId = `${recordId}-${Date.now()}`;
+        setFloatingHearts((prev) => [...prev, { 
+          id: heartId, 
+          recordId, 
+          x: rect.left + rect.width / 2,
+          y: rect.top + rect.height / 2
+        }]);
+        
+        // 动画结束后移除
+        setTimeout(() => {
+          setFloatingHearts((prev) => prev.filter((h) => h.id !== heartId));
+        }, 1000);
+      }
+    }
+    
+    try {
+      if (hasHearted) {
+        // 2. 发送取消点赞请求
+        const res = await api.reaction.remove(currentUser.id, toUserId, recordId);
+        if (!res.success) {
+          // 3. 失败回滚：恢复点赞状态
+          setUserHeartedRecords((prev) => {
+            const newSet = new Set(prev);
+            newSet.add(recordId);
+            return newSet;
+          });
+        }
+      } else {
+        // 2. 发送添加点赞请求
+        const res = await api.reaction.create({
+          fromUserId: currentUser.id,
+          toUserId: toUserId,
+          recordId: recordId,
+        });
+        if (!res.success || !res.data) {
+          // 3. 失败回滚：取消点赞状态
+          setUserHeartedRecords((prev) => {
+            const newSet = new Set(prev);
+            newSet.delete(recordId);
+            return newSet;
+          });
+        }
+      }
+    } catch (error) {
+      // 网络错误等异常情况，也回滚
+      if (hasHearted) {
+        setUserHeartedRecords((prev) => {
+          const newSet = new Set(prev);
+          newSet.add(recordId);
+          return newSet;
+        });
+      } else {
+        setUserHeartedRecords((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(recordId);
+          return newSet;
+        });
+      }
+    } finally {
+      // 无论成功失败，都移除处理中标记
+      setProcessingHearts((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(recordId);
+        return newSet;
+      });
+    }
+  }, [currentUser, processingHearts]);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  // 当记录数据加载完成后，加载爱心数据
+  useEffect(() => {
+    if (!isLoading && sortedTodayRecords.length > 0) {
+      loadHeartData();
+    }
+  }, [isLoading, sortedTodayRecords, loadHeartData]);
+
   const getShapeInfo = (shapeId: string) => {
     return SHAPE_OPTIONS.find((s) => s.id === shapeId);
   };
 
   const getMoodInfo = (moodId: string) => {
     return MOOD_OPTIONS.find((m) => m.id === moodId);
+  };
+
+  // 生成宽慰话语 - 根据点赞数量和便便次数给出不同描述
+  const getComfortMessage = (heartCount: number, partnerRecordCount: number): string => {
+    // 结合爱心次数和便便次数来调侃
+    
+    // 高频率互动 + 高频率便便 = 调侃模式
+    if (heartCount >= 5 && partnerRecordCount >= 3) {
+      return "对方今天不仅跑厕所很勤快，给你点赞也很勤快呢，是怕你担心吗？😂";
+    }
+    
+    if (heartCount >= 3 && partnerRecordCount >= 3) {
+      return "今天便便次数和点赞次数都很多，对方是住在厕所里给你点赞吗？🚽💕";
+    }
+    
+    // 便便多但爱心少
+    if (partnerRecordCount >= 4 && heartCount <= 2) {
+      return "对方今天跑了好几趟厕所，但只给你点了一两次赞，是不是忘了？😅";
+    }
+    
+    // 爱心多但便便少（关心对方）
+    if (heartCount >= 4 && partnerRecordCount === 0) {
+      return "对方今天没记录 but 给你点了好多赞，是在默默关心你哦 🥺💗";
+    }
+    
+    // 根据具体爱心数量
+    switch (heartCount) {
+      case 1:
+        return partnerRecordCount > 0 
+          ? "对方今天默默给你点了个赞，看来即使在忙碌中也在关注你哦 👀"
+          : "对方今天默默给你点了个赞，看来有在关注你哦 👀";
+      case 2:
+        return "今天收到了两次爱心，对方好像对你挺上心的 💝";
+      case 3:
+        return "三次点赞，看来对方今天特别关注你的动态呢 ✨";
+      case 4:
+        return "四次爱心！对方今天很在意你的每一条记录 🥰";
+      case 5:
+        return "五次点赞，这份关心已经藏不住啦 💕";
+      case 6:
+        return "六次爱心！你们今天互动很频繁呢 💗";
+      case 7:
+        return "七次点赞，对方今天一直惦记着你呢 💘";
+      case 8:
+        return "八次爱心！这是什么神仙关注频率 🌟";
+      case 9:
+        return "九次点赞，对方今天眼里只有你了吧 👀💕";
+      default:
+        // 10次及以上
+        if (heartCount >= 15) {
+          return `今天收到了 ${heartCount} 次点赞！被无限宠爱的感觉真好 🥺💗`;
+        } else if (heartCount >= 10) {
+          return `今天收到了 ${heartCount} 次点赞！你们今天互动超频繁的 💑✨`;
+        }
+        return `今天收到了 ${heartCount} 次点赞！对方今天特别在意你呢 💖`;
+    }
   };
 
   const handleDismissReminder = (id: string) => {
@@ -126,12 +334,14 @@ export function Home() {
     const shape = getShapeInfo(record.shapeId);
     const mood = getMoodInfo(record.moodId);
     const user = isPartner ? partner : currentUser;
+    const hasHearted = userHeartedRecords.has(record.id);
+    const isProcessing = processingHearts.has(record.id);
 
     return (
       <Card
         key={record.id}
         variant={isPartner ? 'partner' : 'default'}
-        className="mb-4"
+        className="mb-4 relative"
       >
         <div className="flex items-start gap-4">
           {/* 用户头像 */}
@@ -160,6 +370,23 @@ export function Home() {
                     {mood.emoji}
                   </span>
                 )}
+                {/* 只在伴侣记录上显示爱心按钮 */}
+                {isPartner && (
+                  <button
+                    onClick={(e) => handleHeartClick(record.id, record.userId, e.currentTarget)}
+                    disabled={isProcessing}
+                    className={`flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200 ${
+                      hasHearted
+                        ? 'text-pink bg-pink/10'
+                        : 'text-primary/30 hover:text-pink hover:bg-pink/10'
+                    } ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    <Heart
+                      size={16}
+                      className={`transition-transform duration-200 ${hasHearted ? 'fill-current' : ''}`}
+                    />
+                  </button>
+                )}
               </div>
             </div>
 
@@ -185,7 +412,6 @@ export function Home() {
                 {record.note}
               </p>
             )}
-
           </div>
         </div>
       </Card>
@@ -296,6 +522,29 @@ export function Home() {
           </div>
         )}
 
+        {/* 收到的爱心卡片 */}
+        {receivedHearts.length > 0 && partner && (
+          <div className="mb-6 p-5 bg-gradient-to-br from-pink/20 via-pink-soft/30 to-cream rounded-2xl border border-pink/30 shadow-lg shadow-pink/10">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-md">
+                {partner.avatar ? (
+                  <DicebearAvatar seed={partner.avatar} size={44} />
+                ) : (
+                  <User size={24} className="text-pink" />
+                )}
+              </div>
+              <div className="flex-1">
+                <p className="font-serif text-primary text-base mb-1">
+                  {getComfortMessage(receivedHearts.length, partnerTodayRecords.length)}
+                </p>
+                <p className="text-sm text-primary/60 font-mono">
+                  {partner.name} 今天给你点了 <span className="text-pink font-bold">{receivedHearts.length}</span> 个爱心
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* 今日记录 */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
@@ -358,6 +607,41 @@ export function Home() {
         userId={currentUser?.id || ''}
         onAvatarUpdated={handleAvatarUpdated}
       />
+
+      {/* 浮动爱心动画 */}
+      {floatingHearts.map((heart) => (
+        <div
+          key={heart.id}
+          className="fixed pointer-events-none z-50"
+          style={{
+            left: `${heart.x}px`,
+            top: `${heart.y}px`,
+            transform: 'translate(-50%, -50%)',
+          }}
+        >
+          <Heart
+            size={20}
+            className="text-pink fill-pink animate-float-up"
+          />
+        </div>
+      ))}
+
+      {/* 浮动动画样式 */}
+      <style>{`
+        @keyframes floatUp {
+          0% {
+            transform: translate(-50%, -50%) translateY(0) scale(1);
+            opacity: 1;
+          }
+          100% {
+            transform: translate(-50%, -50%) translateY(-80px) scale(1.3);
+            opacity: 0;
+          }
+        }
+        .animate-float-up {
+          animation: floatUp 0.8s ease-out forwards;
+        }
+      `}</style>
     </div>
   );
 }

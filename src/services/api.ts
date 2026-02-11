@@ -164,6 +164,7 @@ class MockDataStore {
       fromUserId: request.fromUserId,
       toUserId: request.toUserId,
       recordId: request.recordId,
+      isActive: true,
       createdAt: new Date().toISOString(),
     };
 
