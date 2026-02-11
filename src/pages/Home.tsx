@@ -122,7 +122,7 @@ export function Home() {
 
     const recordIds = sortedTodayRecords.map(({ record }) => record.id);
     
-    // 获取所有爱心反应，只检查当前用户是否点赞
+    // 获取所有爱心反应，只检查当前用户是否点爱心
     const reactionsRes = await api.reaction.getReactionsForRecords(recordIds);
     if (reactionsRes.success) {
       const userHearted = new Set<string>();
@@ -151,14 +151,14 @@ export function Home() {
     
     // 1. 乐观更新：立即改变前端状态
     if (hasHearted) {
-      // 乐观取消点赞
+      // 乐观取消爱心
       setUserHeartedRecords((prev) => {
         const newSet = new Set(prev);
         newSet.delete(recordId);
         return newSet;
       });
     } else {
-      // 乐观添加点赞
+      // 乐观添加爱心
       setUserHeartedRecords((prev) => {
         const newSet = new Set(prev);
         newSet.add(recordId);
@@ -185,31 +185,31 @@ export function Home() {
     
     try {
       if (hasHearted) {
-        // 2. 发送取消点赞请求
-        const res = await api.reaction.remove(currentUser.id, toUserId, recordId);
-        if (!res.success) {
-          // 3. 失败回滚：恢复点赞状态
-          setUserHeartedRecords((prev) => {
-            const newSet = new Set(prev);
-            newSet.add(recordId);
-            return newSet;
-          });
-        }
-      } else {
-        // 2. 发送添加点赞请求
-        const res = await api.reaction.create({
-          fromUserId: currentUser.id,
-          toUserId: toUserId,
-          recordId: recordId,
+      // 2. 发送取消爱心请求
+      const res = await api.reaction.remove(currentUser.id, toUserId, recordId);
+      if (!res.success) {
+        // 3. 失败回滚：恢复爱心状态
+        setUserHeartedRecords((prev) => {
+          const newSet = new Set(prev);
+          newSet.add(recordId);
+          return newSet;
         });
-        if (!res.success || !res.data) {
-          // 3. 失败回滚：取消点赞状态
-          setUserHeartedRecords((prev) => {
-            const newSet = new Set(prev);
-            newSet.delete(recordId);
-            return newSet;
-          });
-        }
+      }
+    } else {
+      // 2. 发送添加爱心请求
+      const res = await api.reaction.create({
+        fromUserId: currentUser.id,
+        toUserId: toUserId,
+        recordId: recordId,
+      });
+      if (!res.success || !res.data) {
+        // 3. 失败回滚：取消爱心状态
+        setUserHeartedRecords((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(recordId);
+          return newSet;
+        });
+      }
       }
     } catch (error) {
       // 网络错误等异常情况，也回滚
@@ -255,59 +255,59 @@ export function Home() {
     return MOOD_OPTIONS.find((m) => m.id === moodId);
   };
 
-  // 生成宽慰话语 - 根据点赞数量和便便次数给出不同描述
+  // 生成宽慰话语 - 根据爱心数量和便便次数给出不同描述
   const getComfortMessage = (heartCount: number, partnerRecordCount: number): string => {
     // 结合爱心次数和便便次数来调侃
     
     // 高频率互动 + 高频率便便 = 调侃模式
     if (heartCount >= 5 && partnerRecordCount >= 3) {
-      return "对方今天不仅跑厕所很勤快，给你点赞也很勤快呢，是怕你担心吗？😂";
+      return "对方今天不仅跑厕所很勤快，给你点爱心也很勤快呢，是怕你担心吗？😂";
     }
     
     if (heartCount >= 3 && partnerRecordCount >= 3) {
-      return "今天便便次数和点赞次数都很多，对方是住在厕所里给你点赞吗？🚽💕";
+      return "今天便便次数和爱心次数都很多，对方是住在厕所里给你点爱心吗？🚽💕";
     }
     
     // 便便多但爱心少
     if (partnerRecordCount >= 4 && heartCount <= 2) {
-      return "对方今天跑了好几趟厕所，但只给你点了一两次赞，是不是忘了？😅";
+      return "对方今天跑了好几趟厕所，但只给你点了一两个爱心，是不是忘了？😅";
     }
     
     // 爱心多但便便少（关心对方）
     if (heartCount >= 4 && partnerRecordCount === 0) {
-      return "对方今天没记录 but 给你点了好多赞，是在默默关心你哦 🥺💗";
+      return "对方今天没记录 but 给你点了好多爱心，是在默默关心你哦 🥺💗";
     }
     
     // 根据具体爱心数量
     switch (heartCount) {
       case 1:
         return partnerRecordCount > 0 
-          ? "对方今天默默给你点了个赞，看来即使在忙碌中也在关注你哦 👀"
-          : "对方今天默默给你点了个赞，看来有在关注你哦 👀";
+          ? "对方今天默默给你点了个爱心，看来即使在忙碌中也在关注你哦 👀"
+          : "对方今天默默给你点了个爱心，看来有在关注你哦 👀";
       case 2:
-        return "今天收到了两次爱心，对方好像对你挺上心的 💝";
+        return "今天收到了两个爱心，对方好像对你挺上心的 💝";
       case 3:
-        return "三次点赞，看来对方今天特别关注你的动态呢 ✨";
+        return "三次爱心，看来对方今天特别关注你的动态呢 ✨";
       case 4:
         return "四次爱心！对方今天很在意你的每一条记录 🥰";
       case 5:
-        return "五次点赞，这份关心已经藏不住啦 💕";
+        return "五次爱心，这份关心已经藏不住啦 💕";
       case 6:
         return "六次爱心！你们今天互动很频繁呢 💗";
       case 7:
-        return "七次点赞，对方今天一直惦记着你呢 💘";
+        return "七次爱心，对方今天一直惦记着你呢 💘";
       case 8:
         return "八次爱心！这是什么神仙关注频率 🌟";
       case 9:
-        return "九次点赞，对方今天眼里只有你了吧 👀💕";
+        return "九次爱心，对方今天眼里只有你了吧 👀💕";
       default:
         // 10次及以上
         if (heartCount >= 15) {
-          return `今天收到了 ${heartCount} 次点赞！被无限宠爱的感觉真好 🥺💗`;
+          return `今天收到了 ${heartCount} 次爱心！被无限宠爱的感觉真好 🥺💗`;
         } else if (heartCount >= 10) {
-          return `今天收到了 ${heartCount} 次点赞！你们今天互动超频繁的 💑✨`;
+          return `今天收到了 ${heartCount} 次爱心！你们今天互动超频繁的 💑✨`;
         }
-        return `今天收到了 ${heartCount} 次点赞！对方今天特别在意你呢 💖`;
+        return `今天收到了 ${heartCount} 次爱心！对方今天特别在意你呢 💖`;
     }
   };
 

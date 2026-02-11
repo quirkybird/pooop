@@ -7,6 +7,7 @@ export function Toaster({ ...props }: ToasterProps) {
     <Sonner
       theme="light"
       className="toaster group"
+      duration={1500}
       toastOptions={{
         classNames: {
           toast:
