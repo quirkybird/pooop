@@ -10,6 +10,7 @@ import {
   GitCommitHorizontal,
   Rocket,
 } from 'lucide-react';
+import { SiVite } from 'react-icons/si';
 import progressData from '../data/dev-progress.json';
 
 type CommitItem = {
@@ -60,6 +61,33 @@ export function DevProgress() {
     };
   }, []);
 
+  const categoryStats = useMemo(() => {
+    if (!stats) return [];
+
+    const counts = stats.timeline.reduce<Record<CommitItem['category'], number>>(
+      (acc, item) => {
+        acc[item.category] += 1;
+        return acc;
+      },
+      { Setup: 0, Feature: 0, UX: 0, Release: 0 }
+    );
+
+    const meta: Record<CommitItem['category'], { label: string; barClass: string }> = {
+      Setup: { label: '初始化', barClass: 'bg-amber-400' },
+      Feature: { label: '功能开发', barClass: 'bg-emerald-500' },
+      UX: { label: '体验优化', barClass: 'bg-sky-500' },
+      Release: { label: '发布部署', barClass: 'bg-violet-500' },
+    };
+
+    return (Object.keys(counts) as CommitItem['category'][]).map((key) => ({
+      key,
+      label: meta[key].label,
+      value: counts[key],
+      ratio: stats.totalCommits > 0 ? Math.round((counts[key] / stats.totalCommits) * 100) : 0,
+      barClass: meta[key].barClass,
+    }));
+  }, [stats]);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-cream via-cream-light to-cream-warm p-4 md:p-6">
       <div className="mx-auto max-w-4xl">
@@ -78,6 +106,10 @@ export function DevProgress() {
               软件开发进度总览
             </p>
             <h1 className="font-serif text-3xl text-primary md:text-4xl">Git 开发时间线</h1>
+            <p className="mt-2 inline-flex items-center gap-2 rounded-full border border-primary/10 bg-white px-3 py-1 text-xs text-primary/70">
+              <SiVite className="text-[#646CFF]" />
+              Built with Vite
+            </p>
             <p className="mt-3 text-sm text-primary/70 md:text-base">
               基于当前仓库提交记录整理，展示本项目从初始化到页面本地化的推进过程。
             </p>
@@ -127,6 +159,28 @@ export function DevProgress() {
             最新提交：{format(new Date(stats.latest.date), 'yyyy年M月d日 HH:mm', { locale: zhCN })}
             （{stats.latest.hash}）
           </p>
+        </section>
+
+        <section className="mb-8 rounded-2xl border border-primary/10 bg-white p-5">
+          <h2 className="mb-4 font-serif text-xl text-primary">提交分类图表</h2>
+          <div className="space-y-3">
+            {categoryStats.map((item) => (
+              <div key={item.key}>
+                <div className="mb-1 flex items-center justify-between text-sm text-primary/80">
+                  <span>{item.label}</span>
+                  <span className="font-mono">
+                    {item.value} 次 · {item.ratio}%
+                  </span>
+                </div>
+                <div className="h-3 overflow-hidden rounded-full bg-cream-warm">
+                  <div
+                    className={`h-full rounded-full ${item.barClass}`}
+                    style={{ width: `${item.ratio}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
         </section>
 
         <section className="relative pl-6 md:pl-8">

@@ -7,6 +7,8 @@
     "dev": "vite",
     "dev:progress": "node scripts/generate-dev-progress.mjs && vite",
     "prebuild": "node scripts/generate-dev-progress.mjs",
+    "test:dev-progress": "node --test scripts/generate-dev-progress.test.mjs",
+    "ci": "npm run test:dev-progress && npm run build",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
@@ -20,6 +22,7 @@
     "lucide-react": "^0.563.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-icons": "^5.5.0",
     "react-router-dom": "^7.13.0",
     "sonner": "^2.0.7",
     "tailwindcss": "^4.1.18",
