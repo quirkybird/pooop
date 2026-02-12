@@ -17,6 +17,7 @@ type CommitItem = {
   fullHash?: string;
   date: string;
   title: string;
+  titleZh?: string;
   category: 'Setup' | 'Feature' | 'UX' | 'Release';
   milestone?: boolean;
 };
@@ -151,7 +152,12 @@ export function DevProgress() {
                   )}
                   <span className="ml-auto text-xs font-mono text-primary/50">#{item.hash}</span>
                 </div>
-                <h3 className="mt-3 text-base font-semibold text-primary md:text-lg">{item.title}</h3>
+                <h3 className="mt-3 text-base font-semibold text-primary md:text-lg">
+                  {item.titleZh || item.title}
+                </h3>
+                {item.titleZh && item.titleZh !== item.title && (
+                  <p className="mt-1 text-xs text-primary/45">{item.title}</p>
+                )}
                 <p className="mt-2 text-sm text-primary/60">
                   {format(new Date(item.date), 'yyyy年M月d日 HH:mm', { locale: zhCN })}
                 </p>
