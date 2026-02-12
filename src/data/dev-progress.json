@@ -1,0 +1,78 @@
+{
+  "generatedAt": "2026-02-12T02:27:44.952Z",
+  "total": 9,
+  "commits": [
+    {
+      "hash": "4b85d2f",
+      "fullHash": "4b85d2f67d578727a298a0532628c6c14240398c",
+      "date": "2026-02-11T22:49:24+08:00",
+      "title": "Update index.html for localization to Chinese, add meta description and theme color, and replace favicon with a new icon file.",
+      "category": "Feature",
+      "milestone": true
+    },
+    {
+      "hash": "c8372db",
+      "fullHash": "c8372db04479374e5ddee44076a8872f8785ce4c",
+      "date": "2026-02-11T22:13:11+08:00",
+      "title": "Update Toaster duration and refine heart reaction terminology in Home page for improved clarity and consistency.",
+      "category": "Feature",
+      "milestone": false
+    },
+    {
+      "hash": "e4e8b99",
+      "fullHash": "e4e8b999df6e2d85ae476afe7ce2235f9dfc115a",
+      "date": "2026-02-11T22:00:21+08:00",
+      "title": "Update README with project description and features, implement soft delete functionality for heart reactions in the database, and enhance Home page with optimistic UI updates for heart interactions. Add new API methods for managing heart reactions and retrieving received hearts.",
+      "category": "UX",
+      "milestone": true
+    },
+    {
+      "hash": "74254ee",
+      "fullHash": "74254ee4aa9fa8c4080feb6ce813a33ec2f11a02",
+      "date": "2026-02-11T09:34:09+08:00",
+      "title": "Refactor History and Home pages by removing unused imports to streamline code and improve performance.",
+      "category": "UX",
+      "milestone": false
+    },
+    {
+      "hash": "91c13f8",
+      "fullHash": "91c13f857f20709e44e4d47ebf2725760e802cae",
+      "date": "2026-02-11T05:59:45+08:00",
+      "title": "Add timezone handling in database migration, enhance AvatarEditModal with random seed refresh functionality, and implement Timeline component for displaying user records. Update HeartButton to manage reactions more effectively and improve History page with date range filtering for records.",
+      "category": "Feature",
+      "milestone": true
+    },
+    {
+      "hash": "6ca5850",
+      "fullHash": "6ca5850eaf514746e79f171f9b594631f8c49961",
+      "date": "2026-02-11T04:03:48+08:00",
+      "title": "Add avatar editing modal, integrate Sonner for toast notifications, and update package dependencies. Enhance user feedback in various components and improve avatar selection functionality.",
+      "category": "Feature",
+      "milestone": true
+    },
+    {
+      "hash": "0412561",
+      "fullHash": "04125614523ff1bb573304f2fb452cc27df3b3d5",
+      "date": "2026-02-11T02:37:13+08:00",
+      "title": "Implement Vercel deployment guide, add avatar selection feature, and enhance authentication flow with session management. Update user registration to include avatar emoji and improve error handling in authentication. Introduce toast notifications for user feedback.",
+      "category": "Release",
+      "milestone": true
+    },
+    {
+      "hash": "25bac0f",
+      "fullHash": "25bac0fc360d0c638eb2b8f5234427f215bef80c",
+      "date": "2026-02-11T00:06:37+08:00",
+      "title": "Add Dicebear dependencies and enhance UI with new icons",
+      "category": "UX",
+      "milestone": true
+    },
+    {
+      "hash": "f2ca597",
+      "fullHash": "f2ca5971a4dab849bb467998bac844d52c3ccd93",
+      "date": "2026-02-10T23:34:50+08:00",
+      "title": "pooooooooop",
+      "category": "Feature",
+      "milestone": false
+    }
+  ]
+}

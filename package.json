@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:progress": "node scripts/generate-dev-progress.mjs && vite",
+    "prebuild": "node scripts/generate-dev-progress.mjs",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"

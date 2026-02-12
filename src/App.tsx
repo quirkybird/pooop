@@ -4,6 +4,7 @@ import { Home } from './pages/Home';
 import { Record } from './pages/Record';
 import { Bind } from './pages/Bind';
 import { History } from './pages/History';
+import { DevProgress } from './pages/DevProgress';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { EmailVerified } from './pages/EmailVerified';
@@ -19,6 +20,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/email-verified" element={<EmailVerified />} />
+        <Route path="/dev-progress" element={<DevProgress />} />
         
         {/* 受保护路由 */}
         <Route

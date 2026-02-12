@@ -11,6 +11,7 @@ import {
   User,
   MessageCircle,
   FileText,
+  GitBranch,
 } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
@@ -583,6 +584,14 @@ export function Home() {
         >
           <Clock size={16} />
           查看历史记录
+        </button>
+
+        <button
+          onClick={() => navigate('/dev-progress')}
+          className="mt-3 w-full py-4 rounded-2xl bg-white text-primary font-mono text-sm hover:bg-cream-light transition-colors flex items-center justify-center gap-2 border border-primary/10"
+        >
+          <GitBranch size={16} />
+          查看开发进度时间线
         </button>
       </main>
 
