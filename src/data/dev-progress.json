@@ -1,7 +1,16 @@
 {
-  "generatedAt": "2026-02-21T17:33:00.674Z",
-  "total": 12,
+  "generatedAt": "2026-02-21T18:29:18.457Z",
+  "total": 13,
   "commits": [
+    {
+      "hash": "4b027c1",
+      "fullHash": "4b027c1a64259b018df4d1d6dd9f68623f7dcabb",
+      "date": "2026-02-22T02:27:41+08:00",
+      "title": "feat: add new dependencies for AI health summary and enhance History page with trend analysis features",
+      "titleZh": "新功能：add new dependencies for AI health summary and enhance History page with trend analysis features",
+      "category": "Feature",
+      "milestone": true
+    },
     {
       "hash": "458f273",
       "fullHash": "458f273383389f3943d1a5df54f135b5b3414868",

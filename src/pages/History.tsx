@@ -451,7 +451,10 @@ export function History() {
       } catch (error) {
         if (cancelled) return;
         setAiSummary("");
-        setAiError(error?.message || "AI 分析加载失败，请稍后重试。");
+        setAiError(
+          (error as { message?: string })?.message ||
+            "AI 分析加载失败，请稍后重试。",
+        );
       } finally {
         if (!cancelled) {
           setAiLoading(false);

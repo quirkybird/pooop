@@ -9,8 +9,7 @@ import type {
   ApiResponse,
   CreateRecordRequest,
   CreateReactionRequest,
-  BindRequest,
-  AiHealthSummary
+  BindRequest 
 } from '../types';
 
 // API 响应包装
@@ -258,7 +257,7 @@ export const supabaseApi = {
     ): Promise<ApiResponse<string | null>> => {
       try {
         const { data, error } = await supabase
-          .from<AiHealthSummary>('ai_health_summaries')
+          .from('ai_health_summaries')
           .select('summary')
           .eq('user_id', userId)
           .eq('period_type', periodType)
