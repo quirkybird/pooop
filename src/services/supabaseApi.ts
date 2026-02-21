@@ -9,7 +9,8 @@ import type {
   ApiResponse,
   CreateRecordRequest,
   CreateReactionRequest,
-  BindRequest 
+  BindRequest,
+  AiHealthSummary
 } from '../types';
 
 // API 响应包装
@@ -244,6 +245,29 @@ export const supabaseApi = {
 
         if (error) throw error;
         return createResponse(transformRecord(data));
+      } catch (error) {
+        return handleError(error);
+      }
+    },
+  },
+
+  aiHealth: {
+    getLatestSummary: async (
+      userId: string,
+      periodType: 'weekly' | 'monthly' | 'yearly' = 'monthly',
+    ): Promise<ApiResponse<string | null>> => {
+      try {
+        const { data, error } = await supabase
+          .from<AiHealthSummary>('ai_health_summaries')
+          .select('summary')
+          .eq('user_id', userId)
+          .eq('period_type', periodType)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (error) throw error;
+        return createResponse(data?.summary ?? null);
       } catch (error) {
         return handleError(error);
       }

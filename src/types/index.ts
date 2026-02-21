@@ -117,3 +117,11 @@ export interface CreateReactionRequest {
   toUserId: string;
   recordId: string;
 }
+
+// AI 健康分析总结
+export interface AiHealthSummary {
+  userId: string;
+  periodType: 'weekly' | 'monthly' | 'yearly';
+  summary: string;
+  createdAt: string;
+}

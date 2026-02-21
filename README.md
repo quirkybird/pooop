@@ -28,6 +28,34 @@ npm run dev
 
 ---
 
+## ⚙️ 环境变量
+
+- VITE_SUPABASE_URL 与 VITE_SUPABASE_ANON_KEY：Supabase 项目地址与匿名 key。
+- VITE_APP_NAME：页面展示的应用名称。
+- VITE_GENAI_API_KEY：可选，配置后趋势页会调用 Gemini-3-Flash-Preview 生成中文健康分析；留空时展示提示。
+- SUPABASE_SERVICE_ROLE_KEY：Supabase Functions 或 CLI 的 service-role KEY，必须在服务端安全保存。
+- GENAI_API_KEY：供 Supabase Edge Function 调用 Gemini 的秘钥。
+
+---
+
+
+---
+
+## Supabase Edge Function
+
+- 路径：`supabase/functions/ai-health-summary/index.ts`
+- 功能：按自然月统计 `poo_records`，调用 Gemini-3-Flash-Preview 生成中文健康总结，并插入 `ai_health_summaries`。
+- 请求示例：
+  ```json
+  {
+    "user_id": "<uuid>",
+    "period_type": "monthly"
+  }
+  ```
+- 部署时须在 Supabase 控制台或 CLI 设置 `GENAI_API_KEY` 与 `SUPABASE_SERVICE_ROLE_KEY`。
+
+---
+
 ## 📅 开发时间线
 
 <details open>

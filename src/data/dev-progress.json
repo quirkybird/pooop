@@ -1,7 +1,16 @@
 {
-  "generatedAt": "2026-02-12T03:16:54.480Z",
-  "total": 11,
+  "generatedAt": "2026-02-21T17:33:00.674Z",
+  "total": 12,
   "commits": [
+    {
+      "hash": "458f273",
+      "fullHash": "458f273383389f3943d1a5df54f135b5b3414868",
+      "date": "2026-02-12T11:17:55+08:00",
+      "title": "feat: automate dev progress pipeline and enhance timeline UI",
+      "titleZh": "新功能：automate dev progress pipeline and enhance timeline UI",
+      "category": "UX",
+      "milestone": false
+    },
     {
       "hash": "da4b788",
       "fullHash": "da4b7887e9057a4d94544a49e89e3bf957777591",
