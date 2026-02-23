@@ -1,7 +1,16 @@
 {
-  "generatedAt": "2026-02-23T13:58:06.214Z",
-  "total": 14,
+  "generatedAt": "2026-02-23T14:52:18.606Z",
+  "total": 15,
   "commits": [
+    {
+      "hash": "460c73b",
+      "fullHash": "460c73b5ab36e0e18c52a6d76fb87a891ec4605f",
+      "date": "2026-02-23T22:00:33+08:00",
+      "title": "Update dev-progress.json with new commit details, implement date range filtering in History page, and enhance mood and shape statistics calculations.",
+      "titleZh": "更新 dev-progress.json with new commit details, implement date range filtering in History page, and enhance mood and shape statistics calculations.",
+      "category": "Feature",
+      "milestone": true
+    },
     {
       "hash": "4509f73",
       "fullHash": "4509f73cbdbca4d7a52762f92b52da1186546ad1",

@@ -300,6 +300,9 @@ export function History() {
   const daysInLatestMonth = latestMonthRange
     ? differenceInCalendarDays(latestMonthRange.end, latestMonthRange.start) + 1
     : 0;
+  const latestMonthKey = latestMonthRange
+    ? format(latestMonthRange.start, "yyyy-MM")
+    : null;
 
   const getDaysWithRecords = (
     records: PooRecord[],
@@ -320,18 +323,10 @@ export function History() {
     return uniqueDays.size;
   };
 
-  const filterRecordsInRange = (
-    records: PooRecord[],
-    range: { start: Date; end: Date } | null,
-  ) => {
-    if (!range) {
-      return [];
-    }
-
-    return records.filter((record) => {
-      const day = new Date(record.timestamp);
-      return day >= range.start && day <= range.end;
-    });
+  const getMonthKey = (date: Date) => format(date, "yyyy-MM");
+  const filterRecordsByMonthKey = (records: PooRecord[], monthKey: string | null) => {
+    if (!monthKey) return [];
+    return records.filter((record) => getMonthKey(new Date(record.timestamp)) === monthKey);
   };
 
   const getDaysSinceLastRecord = (records: PooRecord[]) => {
@@ -358,15 +353,26 @@ export function History() {
       return acc;
     }, new Map());
 
-    return MOOD_OPTIONS.map((option) => ({
+    const entries = MOOD_OPTIONS.map((option) => ({
       ...option,
       count: counts.get(option.id) ?? 0,
       percentage: total
         ? Math.round(((counts.get(option.id) ?? 0) / total) * 100)
         : 0,
-    }))
-      .filter((item) => item.count > 0)
-      .sort((a, b) => b.count - a.count);
+    })).filter((item) => item.count > 0);
+
+    const unknownMoodEntries = Array.from(counts.entries())
+      .filter(([id]) => !MOOD_OPTIONS.some((option) => option.id === id))
+      .map(([id, count]) => ({
+        id,
+        emoji: "❔",
+        label: `其他 (${id.replace("mood-", "")})`,
+        color: "#B0BEC5",
+        count,
+        percentage: total ? Math.round((count / total) * 100) : 0,
+      }));
+
+    return [...entries, ...unknownMoodEntries].sort((a, b) => b.count - a.count);
   };
 
   const buildShapeDistribution = (records: PooRecord[]) => {
@@ -376,31 +382,43 @@ export function History() {
       return acc;
     }, new Map());
 
-    return SHAPE_OPTIONS.map((shape) => ({
+    const entries = SHAPE_OPTIONS.map((shape) => ({
       ...shape,
       count: counts.get(shape.id) ?? 0,
       percentage: total
         ? Math.round(((counts.get(shape.id) ?? 0) / total) * 100)
         : 0,
-    }))
-      .filter((item) => item.count > 0)
-      .sort((a, b) => b.count - a.count);
+    })).filter((item) => item.count > 0);
+
+    const unknownShapeEntries = Array.from(counts.entries())
+      .filter(([id]) => !SHAPE_OPTIONS.some((shape) => shape.id === id))
+      .map(([id, count]) => ({
+        id,
+        emoji: "❔",
+        label: `其他 (${id.replace("shape-", "")})`,
+        description: "未知形态",
+        color: "#90A4AE",
+        count,
+        percentage: total ? Math.round((count / total) * 100) : 0,
+      }));
+
+    return [...entries, ...unknownShapeEntries].sort((a, b) => b.count - a.count);
   };
 
   const moodStats = {
     self: buildMoodDistribution(
-      filterRecordsInRange(trendRecords.self, latestMonthRange),
+      filterRecordsByMonthKey(trendRecords.self, latestMonthKey),
     ),
     partner: buildMoodDistribution(
-      filterRecordsInRange(trendRecords.partner, latestMonthRange),
+      filterRecordsByMonthKey(trendRecords.partner, latestMonthKey),
     ),
   };
   const shapeStats = {
     self: buildShapeDistribution(
-      filterRecordsInRange(trendRecords.self, latestMonthRange),
+      filterRecordsByMonthKey(trendRecords.self, latestMonthKey),
     ),
     partner: buildShapeDistribution(
-      filterRecordsInRange(trendRecords.partner, latestMonthRange),
+      filterRecordsByMonthKey(trendRecords.partner, latestMonthKey),
     ),
   };
 
@@ -821,7 +839,7 @@ export function History() {
                     </p>
                     <div className="mt-2 space-y-2">
                       {moodList.length > 0 ? (
-                        moodList.slice(0, 3).map((mood) => (
+                        moodList.map((mood) => (
                           <div
                             key={mood.id}
                             className="flex items-center justify-between gap-2 text-sm"
@@ -847,7 +865,7 @@ export function History() {
                     </p>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {shapeList.length > 0 ? (
-                        shapeList.slice(0, 4).map((shape) => (
+                        shapeList.map((shape) => (
                           <span
                             key={shape.id}
                             className="flex items-center gap-1 rounded-full border border-primary/10 px-3 py-1 text-xs text-primary"
