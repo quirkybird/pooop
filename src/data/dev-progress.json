@@ -1,7 +1,16 @@
 {
-  "generatedAt": "2026-02-21T18:29:18.457Z",
-  "total": 13,
+  "generatedAt": "2026-02-23T13:58:06.214Z",
+  "total": 14,
   "commits": [
+    {
+      "hash": "4509f73",
+      "fullHash": "4509f73cbdbca4d7a52762f92b52da1186546ad1",
+      "date": "2026-02-22T02:29:45+08:00",
+      "title": "Update dev-progress.json with new commit details, enhance error handling in History page, and simplify API call in supabaseApi.ts",
+      "titleZh": "更新 dev-progress.json with new commit details, enhance error handling in History page, and simplify API call in supabaseApi.ts",
+      "category": "Feature",
+      "milestone": false
+    },
     {
       "hash": "4b027c1",
       "fullHash": "4b027c1a64259b018df4d1d6dd9f68623f7dcabb",

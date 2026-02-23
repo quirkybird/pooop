@@ -320,6 +320,20 @@ export function History() {
     return uniqueDays.size;
   };
 
+  const filterRecordsInRange = (
+    records: PooRecord[],
+    range: { start: Date; end: Date } | null,
+  ) => {
+    if (!range) {
+      return [];
+    }
+
+    return records.filter((record) => {
+      const day = new Date(record.timestamp);
+      return day >= range.start && day <= range.end;
+    });
+  };
+
   const getDaysSinceLastRecord = (records: PooRecord[]) => {
     if (records.length === 0) {
       return null;
@@ -374,12 +388,20 @@ export function History() {
   };
 
   const moodStats = {
-    self: buildMoodDistribution(trendRecords.self),
-    partner: buildMoodDistribution(trendRecords.partner),
+    self: buildMoodDistribution(
+      filterRecordsInRange(trendRecords.self, latestMonthRange),
+    ),
+    partner: buildMoodDistribution(
+      filterRecordsInRange(trendRecords.partner, latestMonthRange),
+    ),
   };
   const shapeStats = {
-    self: buildShapeDistribution(trendRecords.self),
-    partner: buildShapeDistribution(trendRecords.partner),
+    self: buildShapeDistribution(
+      filterRecordsInRange(trendRecords.self, latestMonthRange),
+    ),
+    partner: buildShapeDistribution(
+      filterRecordsInRange(trendRecords.partner, latestMonthRange),
+    ),
   };
 
   const viewTabs: Array<{ id: "history" | "trends"; label: string }> = [
@@ -851,7 +873,7 @@ export function History() {
             <div className="flex items-center justify-between mb-2">
               <p className="font-serif text-lg text-primary">AI 分析</p>
               <span className="text-xs font-mono uppercase tracking-wide text-primary/50">
-                数据来自最新自然月总结
+                每日凌晨12:00自动更新
               </span>
             </div>
             <div className="min-h-[120px] rounded-2xl border border-dashed border-primary/20 bg-white/70 p-4 text-sm text-primary/70">
