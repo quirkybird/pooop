@@ -4,6 +4,7 @@ import type {
   PooRecord, 
   HeartReaction, 
   ReminderCard,
+  AiHealthSummary,
   ShapeOption,
   MoodOption,
   ApiResponse,
@@ -254,11 +255,11 @@ export const supabaseApi = {
     getLatestSummary: async (
       userId: string,
       periodType: 'weekly' | 'monthly' | 'yearly' = 'monthly',
-    ): Promise<ApiResponse<string | null>> => {
+    ): Promise<ApiResponse<Pick<AiHealthSummary, 'summary' | 'createdAt'> | null>> => {
       try {
         const { data, error } = await supabase
           .from('ai_health_summaries')
-          .select('summary')
+          .select('summary, created_at')
           .eq('user_id', userId)
           .eq('period_type', periodType)
           .order('created_at', { ascending: false })
@@ -266,7 +267,14 @@ export const supabaseApi = {
           .maybeSingle();
 
         if (error) throw error;
-        return createResponse(data?.summary ?? null);
+        if (!data) {
+          return createResponse(null);
+        }
+
+        return createResponse({
+          summary: data.summary,
+          createdAt: data.created_at
+        });
       } catch (error) {
         return handleError(error);
       }

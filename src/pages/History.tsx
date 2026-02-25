@@ -69,6 +69,7 @@ export function History() {
   const [aiSummary, setAiSummary] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [aiUpdatedAt, setAiUpdatedAt] = useState<string | null>(null);
 
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [weekRecords, setWeekRecords] = useState<PooRecord[]>([]);
@@ -453,6 +454,7 @@ export function History() {
 
     if (!currentUser) {
       setAiSummary("");
+      setAiUpdatedAt(null);
       setAiError("请先登录以查看 AI 分析。");
       setAiLoading(false);
       return;
@@ -460,6 +462,7 @@ export function History() {
 
     if (!trendPeriodLabel) {
       setAiSummary("");
+      setAiUpdatedAt(null);
       setAiError("缺失自然月区间，稍后再试。");
       setAiLoading(false);
       return;
@@ -476,21 +479,25 @@ export function History() {
 
         if (!response.success) {
           setAiSummary("");
+          setAiUpdatedAt(null);
           setAiError(response.message || "AI 分析加载失败，请稍后重试。");
           return;
         }
 
         if (!response.data) {
           setAiSummary("");
+          setAiUpdatedAt(null);
           setAiError("AI 分析尚未生成，待服务端完成后自动展示。");
           return;
         }
 
-        setAiSummary(response.data);
+        setAiSummary(response.data.summary);
+        setAiUpdatedAt(response.data.createdAt ?? null);
         setAiError(null);
       } catch (error) {
         if (cancelled) return;
         setAiSummary("");
+        setAiUpdatedAt(null);
         setAiError(
           (error as { message?: string })?.message ||
             "AI 分析加载失败，请稍后重试。",
@@ -508,6 +515,19 @@ export function History() {
       cancelled = true;
     };
   }, [viewMode, currentUser, trendPeriodLabel, trendData.length]);
+
+  const aiUpdatedLabel = useMemo(() => {
+    if (!aiUpdatedAt) {
+      return "暂无更新时间";
+    }
+
+    const updatedDate = new Date(aiUpdatedAt);
+    if (Number.isNaN(updatedDate.getTime())) {
+      return "更新时间格式异常";
+    }
+
+    return `更新于 ${format(updatedDate, "yyyy年M月d日 HH:mm")}`;
+  }, [aiUpdatedAt]);
 
   return (
     <div className="min-h-screen bg-cream p-4">
@@ -891,7 +911,7 @@ export function History() {
             <div className="flex items-center justify-between mb-2">
               <p className="font-serif text-lg text-primary">AI 分析</p>
               <span className="text-xs font-mono uppercase tracking-wide text-primary/50">
-                每日凌晨12:00自动更新
+                {aiUpdatedLabel}
               </span>
             </div>
             <div className="min-h-[120px] rounded-2xl border border-dashed border-primary/20 bg-white/70 p-4 text-sm text-primary/70">
